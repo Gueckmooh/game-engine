@@ -1,0 +1,6 @@
+<module name="window">
+  <type>dynamic_lib</type>
+  <baseDir>window</baseDir>
+  <dependancies>
+  </dependancies>
+</module>

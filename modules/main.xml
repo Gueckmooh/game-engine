@@ -1,0 +1,7 @@
+<module name="main">
+  <type>executable</type>
+  <baseDir>main</baseDir>
+  <dependancies>
+    <dependancy>window</dependancy>
+  </dependancies>
+</module>
