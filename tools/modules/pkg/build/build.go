@@ -1,15 +1,13 @@
 package build
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"modules/pkg/config"
 	"modules/pkg/modules"
 	"os"
-	"os/exec"
 	"path"
+	"path/filepath"
 )
 
 const includeDir = "include"
@@ -25,6 +23,19 @@ func tryMkdir(path string) error {
 	return nil
 }
 
+func makeHeaderContent(p1 string, p2 string) (string, error) {
+	relpath, err := filepath.Rel(p1, p2)
+	if err != nil {
+		return "", err
+	}
+
+	content := fmt.Sprintf(`#pragma once
+
+#include "%s"`, relpath)
+
+	return content, nil
+}
+
 func CopyIncludeFiles(conf *config.Config, mod *modules.Module) error {
 	if mod.Type == "executable" {
 		return nil
@@ -32,23 +43,35 @@ func CopyIncludeFiles(conf *config.Config, mod *modules.Module) error {
 	includeModPath := path.Join(conf.SandboxRoot, conf.SrcRoot, mod.BaseDir, includeDir)
 	includePath := path.Join(conf.SandboxRoot, conf.BuildDir, includeDir)
 
-	files, err := ioutil.ReadDir(includeModPath)
+	err := filepath.Walk(includeModPath, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(p, info.IsDir())
+		relPath, err := filepath.Rel(includeModPath, p)
+		if err != nil {
+			return err
+		}
+		if info.IsDir() && relPath != "." {
+			tryMkdir(path.Join(includePath, relPath))
+		} else if !info.IsDir() {
+			targetFile := path.Join(includePath, relPath)
+			content, err := makeHeaderContent(targetFile, p)
+			if err != nil {
+				return err
+			}
+
+			err = ioutil.WriteFile(targetFile, []byte(content), 0600)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("CopyIncludeFiles: Copying images: %s", err.Error())
-	}
-
-	var stdBuffer bytes.Buffer
-	mw := io.MultiWriter(os.Stdout, &stdBuffer)
-
-	for _, file := range files {
-		filename := path.Join(includeModPath, file.Name())
-		cmd := exec.Command("cp", "-r", filename, includePath)
-		cmd.Stdout = mw
-		cmd.Stderr = mw
-
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("CopyIncludeFiles: Copying images: %s", err.Error())
-		}
 	}
 
 	return nil
