@@ -24,7 +24,7 @@ func tryMkdir(path string) error {
 }
 
 func makeHeaderContent(p1 string, p2 string) (string, error) {
-	relpath, err := filepath.Rel(p1, p2)
+	relpath, err := filepath.Rel(path.Dir(p1), p2)
 	if err != nil {
 		return "", err
 	}
