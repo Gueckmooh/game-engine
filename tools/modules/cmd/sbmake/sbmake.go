@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"modules/pkg/build"
 	"modules/pkg/config"
@@ -26,9 +25,28 @@ type Opts struct {
 
 func parseArgs() (Opts, []string) {
 	var opts Opts
-	flag.StringVar(&opts.Cwd, "C", "", "")
-	flag.Parse()
-	return opts, os.Args[1:]
+	var optl []string
+	args := os.Args[1:]
+	shift := false
+	for i, o := range args {
+		switch o {
+		case "-C":
+			if len(args) > i+1 {
+				opts.Cwd = args[i+1]
+			} else {
+				fmt.Printf("-C option needs an argument\n")
+			}
+			optl = append(optl, o, opts.Cwd)
+			shift = true
+		default:
+			if !shift {
+				optl = append(optl, o)
+			} else {
+				shift = false
+			}
+		}
+	}
+	return opts, optl
 }
 
 func main() {
@@ -55,9 +73,23 @@ func main() {
 		return
 	}
 
-	currentMod, err := getModDir(conf, cwd)
+	// currentMod, err := getModDir(conf, cwd)
+	// if err != nil {
+	// 	fmt.Printf("main: %s\n", err.Error())
+	// 	return
+	// }
+
+	vars, err := make.ParseMakefile(path.Join(cwd, "Makefile"))
 	if err != nil {
 		fmt.Printf("main: %s\n", err.Error())
+		return
+	}
+
+	var currentMod string
+	if value, ok := vars["MODULE"]; ok {
+		currentMod = value
+	} else {
+		fmt.Printf("mail: MODULE should be defined\n")
 		return
 	}
 
@@ -79,9 +111,11 @@ func main() {
 		return
 	}
 
-	err = make.RunMake(conf, mod, optl)
-	if err != nil {
-		fmt.Printf("main: %s\n", err.Error())
-		return
+	if mod.Type != "only_headers" {
+		err = make.RunMake(conf, mod, optl)
+		if err != nil {
+			fmt.Printf("main: %s\n", err.Error())
+			return
+		}
 	}
 }

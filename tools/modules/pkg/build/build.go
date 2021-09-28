@@ -48,7 +48,6 @@ func CopyIncludeFiles(conf *config.Config, mod *modules.Module) error {
 			return err
 		}
 
-		fmt.Println(p, info.IsDir())
 		relPath, err := filepath.Rel(includeModPath, p)
 		if err != nil {
 			return err

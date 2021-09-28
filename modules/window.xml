@@ -2,5 +2,6 @@
   <type>dynamic_lib</type>
   <baseDir>window</baseDir>
   <dependancies>
+    <depencancy>common/core</depencancy>
   </dependancies>
 </module>

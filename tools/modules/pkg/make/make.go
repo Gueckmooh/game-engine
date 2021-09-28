@@ -35,10 +35,10 @@ func makeParams(conf *config.Config, mod *modules.Module) ([]string, error) {
 
 	if mod.Type == "dynamic_lib" {
 		params = append(params, "DYNAMIC_LIB=1")
-		params = append(params, fmt.Sprintf("BINNAME=lib%s", mod.Name))
+		params = append(params, fmt.Sprintf("BINNAME=lib%s", strings.Replace(mod.Name, "/", "_", -1)))
 	} else if mod.Type == "executable" {
 		params = append(params, "EXECUTABLE=1")
-		params = append(params, fmt.Sprintf("BINNAME=%s", mod.Name))
+		params = append(params, fmt.Sprintf("BINNAME=%s", strings.Replace(mod.Name, "/", "_", -1)))
 	}
 
 	libDep, err := makeLibDeps(conf, mod)

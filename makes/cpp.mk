@@ -1,19 +1,25 @@
 .SECONDEXPANSION:
 
+CXXSTD=-std=c++17
+
 CC=$(TARGET)gcc
 CXX=$(TARGET)g++
 
 DLLEXT ?= so
 
-CXXFLAGS=-I$(INCLUDEDIR)
-LDFLAGS=-L$(LIBDIR)
+CXXFLAGS+=-I$(INCLUDEDIR)
+CXXFLAGS+=$(CXXSTD)
+LDFLAGS+=-L$(LIBDIR)
 ifeq ($(DYNAMIC_LIB),1)
 CXXFLAGS+=-fPIC
 TOBUILD=$(LIBDIR)/$(BINNAME).$(DLLEXT)
-$(info $(TOBUILD))
 endif
 ifeq ($(EXECUTABLE),1)
 TOBUILD=$(BINDIR)/$(BINNAME)
+endif
+
+ifeq ($(WINDOWS),1)
+CXXFLAGS+=-D__USE_WINDOWS__
 endif
 
 CXXFLAGS+=$(EXTRACXXFLAGS)
@@ -28,9 +34,13 @@ build: $(TOBUILD)
 $(OBJDIR)/$(MODDIR)/%.o: $(SRCDIR)/$(MODDIR)/src/%.cpp $$(@D)/.f
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-SRCFILES=$(wildcard $(SRCDIR)/$(MODDIR)/src/*.cpp)
-OBJFILENAMES=$(notdir $(SRCFILES:.cpp=.o))
-OBJFILES=$(addprefix $(OBJDIR)/$(MODDIR)/, $(OBJFILENAMES))
+ifneq ($(SRCFILES),)
+SRCFILES:=$(addprefix $(SRCDIR)/$(MODDIR)/, $(SRCFILES))
+endif
+
+SRCFILES?=$(shell find $(SRCDIR)/$(MODDIR)/src/ -regextype posix-awk -regex '.*\.cpp' -print)
+OBJFILENAMES=$(SRCFILES:.cpp=.o)
+OBJFILES=$(subst $(SRCDIR)/$(MODDIR)/src/, $(OBJDIR)/$(MODDIR)/, $(OBJFILENAMES))
 
 .SECONDARY: $(OBJFILES)
 
@@ -38,4 +48,4 @@ $(BINDIR)/%: $(OBJFILES)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(LIBDIR)/%.$(DLLEXT): $(OBJFILES)
-	$(CXX) $(LDFLAGS) -shared -o $@ $^
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)

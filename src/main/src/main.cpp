@@ -1,5 +1,5 @@
-#include "window/window.hpp"
+#include "window/window_test.hpp"
 
 int main() {
-  foo();
+  window::test();
 }
