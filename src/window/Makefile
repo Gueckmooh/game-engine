@@ -9,7 +9,7 @@ LDFLAGS=-L/usr/x86_64-w64-mingw32/lib
 LDFLAGS+=-lgdi32 -lm
 else
 SRCFILES+=$(shell find src/impl/linux -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
-LDFLAGS+=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image
+LDFLAGS+=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image -lm
 endif
 
 -include $(MAKEDIR)/common.mk

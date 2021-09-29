@@ -18,13 +18,14 @@
 
 #include <iostream>
 #include <cstring>
+#include <cmath>
 
 namespace {
 constexpr uint32_t EVENT_MASK_FLAGS = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_KEY_PRESS |
     XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
     XCB_EVENT_MASK_POINTER_MOTION |
-    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-    XCB_EVENT_MASK_RESIZE_REDIRECT;
+    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE;//  |
+    // XCB_EVENT_MASK_RESIZE_REDIRECT;
 
 inline xcb_intern_atom_reply_t* internAtomHelper(xcb_connection_t* conn, bool only_if_exists, const char* str)
     {
@@ -202,44 +203,34 @@ private:
     }
 
     void run() {
-        BitMap bm{fVideoMode, fpConnection, fpWindow};
-        xcb_generic_event_t *event;
-        while (true) {
-        while ((event = xcb_poll_for_event(fpConnection)) != nullptr) {
-            switch (event->response_type & ~0x80
-                ) {
-            case XCB_RESIZE_REQUEST: {
-              std::cout << "Resize request" << std::endl;
-              auto resize = (xcb_resize_request_event_t *)event;
-              if (resize->width > 0)
-                fVideoMode.width() = resize->width;
-              if (resize->height > 0)
-                fVideoMode.height() = resize->height;
-              bm.resize(fVideoMode.width(), fVideoMode.height());
-              break;
-            }
-            default:
-              break;
-            }
+
+      BitMap bm{fVideoMode, fpConnection, fpWindow};
+      xcb_generic_event_t *event;
+      while (true) {
+        {
+            auto geom = xcb_get_geometry_reply(
+                fpConnection, xcb_get_geometry(fpConnection, fpWindow), nullptr);
+            fVideoMode.width() = geom->width;
+            fVideoMode.height() = geom->height;
+            bm.resize(fVideoMode.width(), fVideoMode.height());
         }
 
-            static int toto = 0;
-            toto++;
-            std::cout << "Hein ? " << toto << std::endl;
-            uint32_t* pixel = bm.data();
-            for (int y = 0; y < fVideoMode.height(); ++y) {
-                for (int x = 0; x < fVideoMode.width(); ++x) {
-                    uint8_t blue = (x + toto);
-                    uint8_t green = y;
-                    *pixel = (green << 8) | blue;
-                    ++pixel;
-                }
+        static int toto = 0;
+        toto++;
+        std::cout << "Hein ? " << toto << std::endl;
+        uint32_t* pixel = bm.data();
+        for (int y = 0; y < fVideoMode.height(); ++y) {
+            for (int x = 0; x < fVideoMode.width(); ++x) {
+                uint8_t blue = (x + toto);
+                uint8_t green = (y + sin(toto/31.)*100);
+                *pixel = (green << 8) | blue;
+                ++pixel;
             }
-            bm.flush();
+        }
+        bm.flush();
 
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     }
 
 };

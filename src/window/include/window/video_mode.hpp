@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 
 namespace window {
 
@@ -29,6 +30,11 @@ public:
 
     const uint32_t bytesPerPixel() const { return fBitsPerPixel / 8; }
     void setBytesPerPixel(const uint32_t bps) { fBitsPerPixel = bps * 8; }
+
+    friend std::ostream& operator<< (std::ostream& stream, const VideoMode& dims) {
+        stream << "{ " << dims.width() << " x " << dims.height() << " }";
+        return stream;
+    }
 };
 
 }

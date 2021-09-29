@@ -95,6 +95,7 @@ public:
         shmdt(fInfo.shmaddr);
 
         xcb_free_pixmap(fpConnection, fPix);
+        fpData = nullptr;
     }
 
     uint32_t* data() { return fpData; }
