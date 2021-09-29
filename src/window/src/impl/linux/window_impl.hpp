@@ -1,15 +1,28 @@
 #pragma once
 
 #include <memory>
-#include "window/window.hpp"
+
+#include <macros/macros.hpp>
+
+#include <window/window.hpp>
 
 namespace window {
 
-class WindowImpl : public Window {
+class WindowImpl final : public Window {
 public:
-  WindowImpl() = default;
-  virtual ~WindowImpl() = default;
-  void run() final;
+    WindowImpl();
+    WindowImpl(VideoMode mode, const std::string& title);
+    virtual ~WindowImpl();
+
+    void create();
+    void create(VideoMode mode, const std::string& title);
+    void close();
+
+    bool opened() const;
+    const VideoMode& videoMode() const;
+
+private:
+    $pimpl_decl
 };
 
 }
