@@ -69,3 +69,41 @@ func GetModule(moduleName string, conf *config.Config) (*Module, error) {
 
 	return mod, nil
 }
+
+type DepTree struct {
+	Mod  *Module
+	Deps []*DepTree
+}
+
+func ComputeDependancies(mod *Module, conf *config.Config) (*DepTree, error) {
+	var root *DepTree = new(DepTree)
+	var visited map[string]bool = make(map[string]bool)
+
+	root.Mod = mod
+	var computeRec func(*DepTree, *Module) error
+	computeRec = func(node *DepTree, mod *Module) error {
+		if _, v := visited[mod.Name]; v {
+			return nil
+		}
+		visited[mod.Name] = true
+		for _, dep := range mod.Dependancies.Dependancy {
+			depMod, err := GetModule(dep, conf)
+			if err != nil {
+				return fmt.Errorf("computeRec: %s", err.Error())
+			}
+			nextNode := &DepTree{Mod: depMod}
+			err = computeRec(nextNode, depMod)
+			if err != nil {
+				return fmt.Errorf("computeRec: %s", err.Error())
+			}
+			node.Deps = append(node.Deps, nextNode)
+		}
+		return nil
+	}
+
+	err := computeRec(root, mod)
+	if err != nil {
+		return nil, fmt.Errorf("ComputeDependancies: %s", err.Error())
+	}
+	return root, nil
+}

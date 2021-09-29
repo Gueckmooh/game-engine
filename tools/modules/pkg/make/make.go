@@ -12,6 +12,10 @@ import (
 	"strings"
 )
 
+func nameToBinName(name string) string {
+	return strings.Replace(name, "/", "_", -1)
+}
+
 func makeLibDeps(conf *config.Config, mod *modules.Module) (string, error) {
 	var deps []string
 	for _, dep := range mod.Dependancies.Dependancy {
@@ -19,7 +23,9 @@ func makeLibDeps(conf *config.Config, mod *modules.Module) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("makeLibDeps: %s", err.Error())
 		}
-		deps = append(deps, m.Name)
+		if m.Type != "only_headers" {
+			deps = append(deps, nameToBinName(m.Name))
+		}
 	}
 	if len(deps) > 0 {
 		return fmt.Sprintf("DEPLIBS=%s", strings.Join(deps, ",")), nil
@@ -35,10 +41,10 @@ func makeParams(conf *config.Config, mod *modules.Module) ([]string, error) {
 
 	if mod.Type == "dynamic_lib" {
 		params = append(params, "DYNAMIC_LIB=1")
-		params = append(params, fmt.Sprintf("BINNAME=lib%s", strings.Replace(mod.Name, "/", "_", -1)))
+		params = append(params, fmt.Sprintf("BINNAME=lib%s", nameToBinName(mod.Name)))
 	} else if mod.Type == "executable" {
 		params = append(params, "EXECUTABLE=1")
-		params = append(params, fmt.Sprintf("BINNAME=%s", strings.Replace(mod.Name, "/", "_", -1)))
+		params = append(params, fmt.Sprintf("BINNAME=%s", nameToBinName(mod.Name)))
 	}
 
 	libDep, err := makeLibDeps(conf, mod)

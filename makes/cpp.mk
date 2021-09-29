@@ -22,6 +22,10 @@ ifeq ($(WINDOWS),1)
 CXXFLAGS+=-D__USE_WINDOWS__
 endif
 
+ifeq ($(DEBUG),1)
+	CXXFLAGS+=-g -O0
+endif
+
 CXXFLAGS+=$(EXTRACXXFLAGS)
 
 LIBS=$(shell echo $(DEPLIBS) | sed 's/,/ /g')
