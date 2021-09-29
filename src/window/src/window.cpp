@@ -17,8 +17,7 @@ void test() {
   //   window::WindowBuilder wb;
   // auto win = wb.build();
   // win->run();
-    WindowImpl win{};
-    win.create();
+    WindowImpl win{{1280, 720}, "My awesome title"};
 }
 
 }
