@@ -6,8 +6,8 @@
     class Impl;                                 \
     std::unique_ptr<Impl> fpImpl;
 #define $pimpl_class(Class, ...)                                        \
-    Class::Class($parameter_merge(__VA_ARGS__)) : fpImpl(std::make_unique<Impl>($parameter_drop_types(__VA_ARGS__))){} \
-    Class::~Class() {}
+    Class::Class($parameter_merge(__VA_ARGS__)) : fpImpl(std::make_unique<Impl>($parameter_drop_types(__VA_ARGS__))){}
+#define $pimpl_class_delete(Class) Class::~Class() {}
 
 #define $pimpl_method_definition(Class, type, name, ...) type Class::name($parameter_merge(__VA_ARGS__))
 #define $pimpl_method_implementation(Class, type, name, ...)            \

@@ -9,14 +9,16 @@
 
 namespace window {
 
-std::shared_ptr<Window> WindowBuilder::build() {
-  return std::make_shared<WindowImpl>();
-}
+// std::shared_ptr<Window> WindowBuilder::build() {
+//   return std::make_shared<WindowImpl>();
+// }
 
 void test() {
-  window::WindowBuilder wb;
-  auto win = wb.build();
-  win->run();
+  //   window::WindowBuilder wb;
+  // auto win = wb.build();
+  // win->run();
+    WindowImpl win{};
+    win.create();
 }
 
 }

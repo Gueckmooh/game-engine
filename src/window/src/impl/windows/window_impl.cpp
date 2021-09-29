@@ -42,30 +42,51 @@ namespace window {
 
 class WindowImpl::Impl {
 private:
+    VideoMode fVideoMode;
+    bool fRunning = false;
+    std::string fName;
+
     HWND fpWindowHandle;
-    bool fRunning;
     BITMAPINFO fBmInfo;
     void* fpBmMemory;
     WNDCLASS fWindowClass;
-    unsigned fBmWidth;
-    unsigned fBmHeight;
-    unsigned fBytesPerPixel;
 public:
-    Impl() : fRunning(false) {
+        Impl()
+        : fVideoMode()
+        , fName("") {
+        init();
+    }
+
+    Impl(VideoMode mode, const std::string name)
+        : fVideoMode(std::move(mode))
+        , fName(name) {
         init();
     }
 
     ~Impl() = default;
 
+    void create(VideoMode mode, const std::string& title) {}
+    void create() {
+        run();
+    }
+    void close() {}
+
+    bool opened() const {
+        return fRunning;
+    }
+
+    const VideoMode& videoMode() const {
+        return fVideoMode;
+    }
+
 private:
     void toto(int xOffset, int yOffset) {
-        int pitch = fBmWidth * fBytesPerPixel;
+        int pitch = fVideoMode.width() * fVideoMode.bytesPerPixel();
         uint8_t* row = (uint8_t*) fpBmMemory;
-        for (int y = 0; y < fBmHeight; ++y) {
-            // uint8_t *pixel = (uint8_t*) row;
+        for (int y = 0; y < fVideoMode.height(); ++y) {
 #if 0
             Pixel pixel{row};
-            for (int x = 0; x < fBmWidth; ++x) {
+            for (int x = 0; x < fVideoMode.width(); ++x) {
                 // Pixel layout: BB GG RR xx
                 // 0x xxRRGGBB
                 pixel.setRGB(0u, (uint8_t)(y + yOffset), (uint8_t)(x + xOffset));
@@ -73,7 +94,7 @@ private:
             }
 #else
             uint32_t* pixel = (uint32_t*)row;
-            for (int x = 0; x < fBmWidth; ++x) {
+            for (int x = 0; x < fVideoMode.width(); ++x) {
                 uint8_t blue = (x + sin(xOffset/31.)*100);
                 uint8_t green = (y + yOffset);
                 *pixel++ = (green << 8) | blue;
@@ -94,12 +115,12 @@ private:
             VirtualFree(fpBmMemory, 0, MEM_RELEASE);
         }
 
-        fBmWidth = width;
-        fBmHeight = height;
+        fVideoMode.width() = width;
+        fVideoMode.height() = height;
 
         fBmInfo.bmiHeader.biSize = sizeof(fBmInfo.bmiHeader);
-        fBmInfo.bmiHeader.biWidth = fBmWidth;
-        fBmInfo.bmiHeader.biHeight = -fBmHeight; // Get a top down window
+        fBmInfo.bmiHeader.biWidth = fVideoMode.width();
+        fBmInfo.bmiHeader.biHeight = -fVideoMode.height(); // Get a top down window
         fBmInfo.bmiHeader.biPlanes = 1;
         fBmInfo.bmiHeader.biBitCount = 32;
         fBmInfo.bmiHeader.biCompression = BI_RGB;
@@ -110,8 +131,8 @@ private:
         fBmInfo.bmiHeader.biClrImportant = 0;
 
         // fpBmHandle = CreateDIBSection(fpDeviceContext, &fBmInfo, DIB_RGB_COLORS, &fpBmMemory, nullptr, 0);
-        fBytesPerPixel = 4;
-        unsigned bmMemorySize = (width * height) * fBytesPerPixel;
+        fVideoMode.setBytesPerPixel(4);
+        unsigned bmMemorySize = (width * height) * fVideoMode.bytesPerPixel();
         fpBmMemory = VirtualAlloc(0, bmMemorySize, MEM_COMMIT, PAGE_READWRITE);
 
         toto(0, 0);
@@ -124,7 +145,7 @@ private:
         StretchDIBits(deviceContext,
                       // x, y, width, height,
                       // x, y, width, height,
-                      0, 0, fBmWidth, fBmHeight,
+                      0, 0, fVideoMode.width(), fVideoMode.height(),
                       0, 0, winWidth, winHeight,
                       fpBmMemory,
                       &fBmInfo,
@@ -266,7 +287,16 @@ public:
 
 };
 
+
+// Pimpl declarations
 $pimpl_class(WindowImpl);
-$pimpl_method(WindowImpl, void, run);
+$pimpl_class(WindowImpl, VideoMode, mode, const std::string&, title);
+$pimpl_class_delete(WindowImpl);
+
+$pimpl_method(WindowImpl, void, create);
+$pimpl_method(WindowImpl, void, create, VideoMode, mode, const std::string&, title);
+$pimpl_method(WindowImpl, void, close);
+$pimpl_method_const(WindowImpl, bool, opened);
+$pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
 
 }
