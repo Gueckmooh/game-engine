@@ -3,7 +3,7 @@
 cd $(dirname "$0")/..
 . scripts/prepare_workspace.sh
 
-if test -ge $# 1
+if test $# -ge 1
 then
     SESSIONNAME="$1"
 else
