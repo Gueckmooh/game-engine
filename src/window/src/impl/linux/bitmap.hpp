@@ -13,6 +13,7 @@
 #include <sys/ipc.h>
 
 #include <xcb/shm.h>
+#include "window_impl.hpp"
 
 namespace window {
 class BitMapImpl final : public BitMap {
@@ -26,6 +27,8 @@ private:
 
     uint32_t* fpData;
 public:
+    friend class WindowImpl;
+
     BitMapImpl(VideoMode mode, xcb_connection_t* conn, xcb_window_t win)
         : fMode(mode)
         , fpConnection(conn)
@@ -50,6 +53,7 @@ public:
         xcb_flush(fpConnection);
     }
 
+private:
     void resize(uint32_t width, uint32_t height) {
         fMode.width() = width;
         fMode.height() = height;
@@ -82,7 +86,7 @@ public:
             0);
     }
 
-private:
+
     void init() {
         xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(fpConnection)).data;
         uint32_t value_mask;

@@ -22,6 +22,9 @@ public:
     bool opened() const;
     const VideoMode& videoMode() const;
 
+    BitMap& bitMap();
+    void closeBitmap();
+
 private:
     $pimpl_decl
 };

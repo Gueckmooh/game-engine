@@ -25,7 +25,7 @@ public:
     const uint32_t bitsPerPixel() const { return fBitsPerPixel; }
     uint32_t& bitsPerPixel() { return fBitsPerPixel; }
 
-    const uint32_t pitch() { return fWidth * bytesPerPixel(); }
+    const uint32_t pitch() const { return fWidth * bytesPerPixel(); }
     const uint32_t pixelBytes() { return fWidth * fHeight * bytesPerPixel(); }
 
     const uint32_t bytesPerPixel() const { return fBitsPerPixel / 8; }

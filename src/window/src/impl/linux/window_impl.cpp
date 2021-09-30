@@ -20,6 +20,9 @@
 #include <cstring>
 #include <cmath>
 
+
+#include "../../genericManip.hpp"
+
 namespace {
 constexpr uint32_t EVENT_MASK_FLAGS = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_KEY_PRESS |
     XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
@@ -62,7 +65,8 @@ public:
     Impl()
         : fVideoMode()
         , fTitle("") {
-        std::cout << "Still todo" << std::endl;
+        init();
+        run();
     }
 
     Impl(VideoMode mode, const std::string name)
@@ -77,12 +81,12 @@ public:
     void create(VideoMode mode, const std::string& title) {
         fVideoMode = std::move(mode);
         fTitle = title;
-        // init();
-        // run();
+        init();
+        run();
     }
     void create() {
-        // init();
-        // run();
+        init();
+        run();
     }
     void close() {
         // @todo
@@ -97,6 +101,7 @@ public:
     }
 
     BitMap& bitMap() {
+        std::cout << "Called too early ?" << std::endl;
         if (!fpBitMap) {
             fpBitMap = std::make_unique<BitMapImpl>(fVideoMode, fpConnection, fpWindow);
         }
@@ -214,32 +219,38 @@ private:
          }
     }
 
+    void resizeDrawable(uint32_t width, uint32_t height) {
+        static_cast<BitMapImpl&>(bitMap()).resize(width, height);
+    }
+
+    void updateWindow() {
+        bitMap().flush();
+    }
+
+    void resizeWindow(uint32_t width, uint32_t height) {
+                    fVideoMode.width() = width;
+            fVideoMode.height() = height;
+            resizeDrawable(fVideoMode.width(), fVideoMode.height());
+    }
+
     void run() {
 
-      BitMapImpl bm{fVideoMode, fpConnection, fpWindow};
+      // BitMapImpl bm{fVideoMode, fpConnection, fpWindow};
+        // auto& bm = bitMap();
       xcb_generic_event_t *event;
+      int xo = 0, yo = 0;
       while (true) {
         {
             auto geom = xcb_get_geometry_reply(
                 fpConnection, xcb_get_geometry(fpConnection, fpWindow), nullptr);
-            fVideoMode.width() = geom->width;
-            fVideoMode.height() = geom->height;
-            bm.resize(fVideoMode.width(), fVideoMode.height());
+            resizeWindow(geom->width, geom->height);
         }
 
-        static int toto = 0;
-        toto++;
-        std::cout << "Hein ? " << toto << std::endl;
-        uint32_t* pixel = bm.data();
-        for (int y = 0; y < fVideoMode.height(); ++y) {
-            for (int x = 0; x < fVideoMode.width(); ++x) {
-                uint8_t blue = (x + toto);
-                uint8_t green = (y + sin(toto/31.)*100);
-                *pixel = (green << 8) | blue;
-                ++pixel;
-            }
-        }
-        bm.flush();
+        test::renderWeirdGradient(bitMap(), xo, yo);
+        updateWindow();
+
+        ++xo;
+        ++yo;
 
         }
 
@@ -259,8 +270,5 @@ $pimpl_method(WindowImpl, BitMap&, bitMap);
 $pimpl_method(WindowImpl, void, closeBitmap);
 $pimpl_method_const(WindowImpl, bool, opened);
 $pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
-
-// BitMap& bitMap();
-//     void closeBitmap();
 
 }

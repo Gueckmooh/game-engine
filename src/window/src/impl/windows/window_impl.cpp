@@ -7,6 +7,9 @@
 
 #include <macros/macros.hpp>
 
+#include "bitmap.hpp"
+#include "../../genericManip.hpp"
+
 namespace {
 struct Pixel{
     uint8_t* fpWord;
@@ -32,25 +35,6 @@ struct Pixel{
 };
 
 
-struct WindowDimension {
-    uint32_t width;
-    uint32_t height;
-
-    WindowDimension(HWND Window) {
-        RECT rect;
-        GetClientRect(Window, &rect);
-        height = rect.bottom - rect.top;
-        width = rect.right - rect.left;
-    }
-
-    friend std::ostream& operator<< (std::ostream& stream, const WindowDimension& dims) {
-        stream << "{ " << dims.width << " x " << dims.height << " }";
-        return stream;
-    }
-
-};
-
-
 
 }
 
@@ -69,11 +53,14 @@ private:
     BITMAPINFO fBmInfo;
     WNDCLASS fWindowClass;
 
+    std::unique_ptr<BitMap> fpBitMap;
+
 public:
     Impl()
         : fVideoMode()
         , fTitle("") {
-        // init();
+        init();
+        run();
     }
 
     Impl(VideoMode mode, const std::string name)
@@ -107,65 +94,37 @@ public:
         return fVideoMode;
     }
 
-private:
-    void renderWeirdGradient(int xOffset, int yOffset) {
-        int pitch = fVideoMode.pitch();
-        uint8_t* row = (uint8_t*) fpBmMemory;
-        for (int y = 0; y < fVideoMode.height(); ++y) {
-            uint32_t* pixel = (uint32_t*)row;
-            for (int x = 0; x < fVideoMode.width(); ++x) {
-                uint8_t blue = (x + sin(xOffset/31.)*1000);
-                uint8_t green = (y + yOffset);
-                *pixel++ = (green << 8) | blue;
-
-            }
-            row += pitch;
+    BitMap& bitMap() {
+        if (!fpBitMap) {
+            fpBitMap = std::make_unique<BitMapImpl>(fVideoMode, fpWindowHandle, &fWindowClass);
         }
-
+        return *fpBitMap;
     }
 
-    void resizeDIBSection(unsigned width, unsigned height) {
-        // @todo bullet proof this
+    void closeBitmap() {
+        fpBitMap.reset(nullptr);
+    }
 
-        if (fpBmMemory) {
-            // @note we could use MEM_UNCOMMIT
-            VirtualFree(fpBmMemory, 0, MEM_RELEASE);
-        }
 
+private:
+    void resize(unsigned width, unsigned height) {
         fVideoMode.width() = width;
         fVideoMode.height() = height;
-                fVideoMode.setBytesPerPixel(4);
+    }
 
-
-        fBmInfo.bmiHeader.biSize = sizeof(fBmInfo.bmiHeader);
-        fBmInfo.bmiHeader.biWidth = fVideoMode.width();
-        fBmInfo.bmiHeader.biHeight = -fVideoMode.height(); // Get a top down window
-        fBmInfo.bmiHeader.biPlanes = 1;
-        fBmInfo.bmiHeader.biBitCount = 32;
-        fBmInfo.bmiHeader.biCompression = BI_RGB;
-        fBmInfo.bmiHeader.biSizeImage = 0;
-        fBmInfo.bmiHeader.biXPelsPerMeter = 0;
-        fBmInfo.bmiHeader.biYPelsPerMeter = 0;
-        fBmInfo.bmiHeader.biClrUsed = 0;
-        fBmInfo.bmiHeader.biClrImportant = 0;
-
-        fpBmMemory = VirtualAlloc(0, fVideoMode.pixelBytes(), MEM_COMMIT, PAGE_READWRITE);
-
-        renderWeirdGradient(0, 0);
+    void resizeBitMap(unsigned width, unsigned height) {
+        // @todo bullet proof this
+        resize(width, height);  // @todo do I need this?
+        static_cast<BitMapImpl&>(bitMap()).resize(width, height);
     }
 
     // @todo remove useless params
-    void updateWindow(HDC deviceContext, WindowDimension dims, unsigned x, unsigned y, unsigned width, unsigned height) {
-        std::cout << "-> " << dims << std::endl;
-        StretchDIBits(deviceContext,
-                      // x, y, width, height,
-                      // x, y, width, height,
-                      0, 0, dims.width, dims.height,
-                      0, 0, fVideoMode.width(), fVideoMode.height(),
-                      fpBmMemory,
-                      &fBmInfo,
-                      DIB_RGB_COLORS,
-                      SRCCOPY);
+    void updateWindow() {
+        bitMap().flush();
+    }
+
+    void paintWindow() {
+        static_cast<BitMapImpl&>(bitMap()).paint();
     }
 
     bool processEvent(HWND Window,
@@ -174,8 +133,8 @@ private:
                       LPARAM LParam) {
         switch (Message) {
         case WM_SIZE: {
-            // WindowDimension dims{fpWindowHandle};
-            // resizeDIBSection(dims.width, dims.height);
+            WindowDimension dims{fpWindowHandle};
+            resizeBitMap(dims.width, dims.height);
             // OutputDebugString("WM_SIZE\n");
             break;
         }
@@ -191,15 +150,7 @@ private:
             OutputDebugString("WM_ACTIVATEAPP\n");
             break;
         case WM_PAINT: {
-            PAINTSTRUCT Paint;
-            HDC deviceContext = BeginPaint(Window, &Paint);
-            auto x = Paint.rcPaint.left;
-            auto y = Paint.rcPaint.top;
-            auto height = Paint.rcPaint.bottom - Paint.rcPaint.top;
-            auto width = Paint.rcPaint.right - Paint.rcPaint.left;
-
-            WindowDimension dims{fpWindowHandle};
-            updateWindow(deviceContext, dims, x, y, width, height);
+            paintWindow();
         } break;
         default:
             return false;
@@ -219,8 +170,6 @@ private:
 
     void init() {
         fWindowClass = {};
-
-        resizeDIBSection(fVideoMode.width(), fVideoMode.height());
 
         fWindowClass.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
         fWindowClass.lpfnWndProc = windowCallback;
@@ -269,23 +218,13 @@ public:
                 }
 
 
-                renderWeirdGradient(xo, yo);
+                test::renderWeirdGradient(bitMap(), xo, yo);
 
-                HDC deviceContext = GetDC(fpWindowHandle);
-                RECT rect;
-                WindowDimension dims {fpWindowHandle};
-                updateWindow(deviceContext, dims, 0, 0, dims.width, dims.height);
-                ReleaseDC(fpWindowHandle, deviceContext);
+                updateWindow();
 
                 ++xo;
+                ++yo;
 
-                // BOOL MessageResult = GetMessage(&Message, 0, 0, 0);
-                // if (MessageResult > 0) {
-                //     TranslateMessage(&Message);
-                //     DispatchMessage(&Message);
-                // } else {
-                //     break;
-                // }
             }
         } else {
             // @todo
@@ -305,6 +244,8 @@ $pimpl_class_delete(WindowImpl);
 $pimpl_method(WindowImpl, void, create);
 $pimpl_method(WindowImpl, void, create, VideoMode, mode, const std::string&, title);
 $pimpl_method(WindowImpl, void, close);
+$pimpl_method(WindowImpl, BitMap&, bitMap);
+$pimpl_method(WindowImpl, void, closeBitmap);
 $pimpl_method_const(WindowImpl, bool, opened);
 $pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
 
