@@ -36,6 +36,7 @@ func makeLibDeps(conf *config.Config, mod *modules.Module) (string, error) {
 
 func makeParams(conf *config.Config, mod *modules.Module) ([]string, error) {
 	var params []string
+	params = append(params, fmt.Sprintf("BASE=%s", path.Join(conf.SandboxRoot)))
 	params = append(params, fmt.Sprintf("MAKEDIR=%s", path.Join(conf.SandboxRoot, conf.MakeDir)))
 	params = append(params, fmt.Sprintf("MODDIR=%s", path.Join(mod.BaseDir)))
 

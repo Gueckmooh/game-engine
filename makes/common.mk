@@ -1,5 +1,3 @@
-BASE=/home/brignone/dev/engine
-
 BUILDDIR=$(BASE)/build
 INCLUDEDIR=$(BUILDDIR)/include
 SRCDIR=$(BASE)/src
