@@ -3,14 +3,11 @@
 #include <cstdint>
 
 #include <window/video_mode.hpp>
-#include <window/window.hpp>
 
 namespace window {
 
 class BitMap {
 public:
-    friend class Window;
-
     virtual uint32_t* data() = 0;
     virtual void flush() = 0;
     virtual const VideoMode& mode() const = 0;

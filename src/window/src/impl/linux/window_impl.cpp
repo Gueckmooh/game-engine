@@ -101,7 +101,6 @@ public:
     }
 
     BitMap& bitMap() {
-        std::cout << "Called too early ?" << std::endl;
         if (!fpBitMap) {
             fpBitMap = std::make_unique<BitMapImpl>(fVideoMode, fpConnection, fpWindow);
         }

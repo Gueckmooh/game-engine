@@ -25,7 +25,7 @@ public:
     void closeBitmap();
 
 private:
-    $pimpl_decl
+    $pimpl_decl;
 };
 
 }
