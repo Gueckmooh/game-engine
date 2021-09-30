@@ -2,7 +2,7 @@
 
 #include <macros/macros.hpp>
 
-#include "bitmap.hpp"
+#include "bitmap_impl.hpp"
 
 #include <xkbcommon/xkbcommon-x11.h>
 #include <xkbcommon/xkbcommon-compose.h>

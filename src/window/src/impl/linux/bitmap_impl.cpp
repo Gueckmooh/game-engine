@@ -1,4 +1,4 @@
-#include "bitmap.hpp"
+#include "bitmap_impl.hpp"
 
 namespace window {
 class BitMapImpl::Impl {

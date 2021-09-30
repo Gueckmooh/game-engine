@@ -7,7 +7,7 @@
 
 #include <macros/macros.hpp>
 
-#include "bitmap.hpp"
+#include "bitmap_impl.hpp"
 #include "../../genericManip.hpp"
 
 namespace {

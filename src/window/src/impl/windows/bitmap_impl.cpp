@@ -1,4 +1,4 @@
-#include "bitmap.hpp"
+#include "bitmap_impl.hpp"
 
 namespace window {
 
@@ -108,7 +108,7 @@ private:
 
 };
 
-$pimpl_class(BitMapImpl, VideoMode, mode, xcb_connection_t*, conn, xcb_window_t, win);
+$pimpl_class(BitMapImpl, VideoMode, mode, HWND, windowHandle, const WNDCLASS*, pWindowClass);
 $pimpl_class_delete(BitMapImpl);
 
 $pimpl_method(BitMapImpl, uint32_t*, data);
