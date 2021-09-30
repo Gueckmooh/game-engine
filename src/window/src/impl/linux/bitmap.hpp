@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include <window/video_mode.hpp>
+#include <window/bitmap.hpp>
 
 #include <xkbcommon/xkbcommon-x11.h>
 #include <xkbcommon/xkbcommon-compose.h>
@@ -14,7 +15,7 @@
 #include <xcb/shm.h>
 
 namespace window {
-class BitMap {
+class BitMapImpl final : public BitMap {
 private:
     VideoMode fMode;
     xcb_connection_t* fpConnection;
@@ -25,11 +26,64 @@ private:
 
     uint32_t* fpData;
 public:
-    BitMap(VideoMode mode, xcb_connection_t* conn, xcb_window_t win)
+    BitMapImpl(VideoMode mode, xcb_connection_t* conn, xcb_window_t win)
         : fMode(mode)
         , fpConnection(conn)
         , fpWindow(win) {
+        init();
+    }
+    ~BitMapImpl() {
+        xcb_shm_detach(fpConnection, fInfo.shmseg);
+        shmdt(fInfo.shmaddr);
 
+        xcb_free_pixmap(fpConnection, fPix);
+        fpData = nullptr;
+    }
+
+    uint32_t* data() { return fpData; }
+    const VideoMode& mode() const { return fMode; };
+
+    void flush() {
+        xcb_copy_area(fpConnection, fPix, fpWindow, fGcontext, 0, 0, 0, 0,
+                      fMode.width(), fMode.height());
+
+        xcb_flush(fpConnection);
+    }
+
+    void resize(uint32_t width, uint32_t height) {
+        fMode.width() = width;
+        fMode.height() = height;
+
+        xcb_shm_detach(fpConnection, fInfo.shmseg);
+        shmdt(fInfo.shmaddr);
+
+        xcb_free_pixmap(fpConnection, fPix);
+
+        xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(fpConnection)).data;
+
+        fInfo.shmid = shmget(IPC_PRIVATE, fMode.pixelBytes(), IPC_CREAT | 0777);
+        fInfo.shmaddr = (uint8_t*)shmat(fInfo.shmid, nullptr, 0);
+
+        fInfo.shmseg = xcb_generate_id(fpConnection);
+
+        xcb_shm_attach(fpConnection, fInfo.shmseg, fInfo.shmid, 0);
+        shmctl(fInfo.shmid, IPC_RMID, 0);
+
+        fpData = (uint32_t*)fInfo.shmaddr;
+
+        fPix = xcb_generate_id(fpConnection);
+        xcb_shm_create_pixmap(
+            fpConnection,
+            fPix,
+            fpWindow,
+            fMode.width(), fMode.height(),
+            screen->root_depth,
+            fInfo.shmseg,
+            0);
+    }
+
+private:
+    void init() {
         xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(fpConnection)).data;
         uint32_t value_mask;
         uint32_t value_list[2];
@@ -54,69 +108,6 @@ public:
             printf("Shm error...\n");
             exit(0);            // @todo do something here
         }
-
-        fInfo.shmid = shmget(IPC_PRIVATE, fMode.pixelBytes(), IPC_CREAT | 0777);
-        fInfo.shmaddr = (uint8_t*)shmat(fInfo.shmid, nullptr, 0);
-
-        fInfo.shmseg = xcb_generate_id(fpConnection);
-
-        xcb_shm_attach(fpConnection, fInfo.shmseg, fInfo.shmid, 0);
-        shmctl(fInfo.shmid, IPC_RMID, 0);
-
-        fpData = (uint32_t*)fInfo.shmaddr;
-
-        fPix = xcb_generate_id(fpConnection);
-        xcb_shm_create_pixmap(
-            fpConnection,
-            fPix,
-            fpWindow,
-            fMode.width(), fMode.height(),
-            screen->root_depth,
-            fInfo.shmseg,
-            0);
-
-        // uint32_t* pixel = fpData;
-        // for (int y = 0; y < fMode.height(); ++y) {
-        //     for (int x = 0; x < fMode.width(); ++x) {
-        //         uint8_t blue = x;
-        //         uint8_t green = y;
-        //         *pixel = (green << 8) | blue;
-        //         ++pixel;
-        //     }
-        // }
-
-        // xcb_copy_area(fpConnection, fPix, fpWindow, gcontext, 0, 0, 0, 0,
-        //               fMode.width(), fMode.height());
-
-        // xcb_flush(fpConnection);
-    }
-    ~BitMap() {
-        xcb_shm_detach(fpConnection, fInfo.shmseg);
-        shmdt(fInfo.shmaddr);
-
-        xcb_free_pixmap(fpConnection, fPix);
-        fpData = nullptr;
-    }
-
-    uint32_t* data() { return fpData; }
-
-    void flush() {
-        xcb_copy_area(fpConnection, fPix, fpWindow, fGcontext, 0, 0, 0, 0,
-                      fMode.width(), fMode.height());
-
-        xcb_flush(fpConnection);
-    }
-
-    void resize(uint32_t width, uint32_t height) {
-        fMode.width() = width;
-        fMode.height() = height;
-
-        xcb_shm_detach(fpConnection, fInfo.shmseg);
-        shmdt(fInfo.shmaddr);
-
-        xcb_free_pixmap(fpConnection, fPix);
-
-        xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(fpConnection)).data;
 
         fInfo.shmid = shmget(IPC_PRIVATE, fMode.pixelBytes(), IPC_CREAT | 0777);
         fInfo.shmaddr = (uint8_t*)shmat(fInfo.shmid, nullptr, 0);

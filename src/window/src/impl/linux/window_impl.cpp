@@ -56,6 +56,7 @@ private:
     xkb_compose_table* fpXkbComposeTable = nullptr;
     xkb_compose_state* fpXkbComposeState = nullptr;
 
+    std::unique_ptr<BitMap> fpBitMap;
 
 public:
     Impl()
@@ -93,6 +94,17 @@ public:
 
     const VideoMode& videoMode() const {
         return fVideoMode;
+    }
+
+    BitMap& bitMap() {
+        if (!fpBitMap) {
+            fpBitMap = std::make_unique<BitMapImpl>(fVideoMode, fpConnection, fpWindow);
+        }
+        return *fpBitMap;
+    }
+
+    void closeBitmap() {
+        fpBitMap.reset(nullptr);
     }
 
 private:
@@ -204,7 +216,7 @@ private:
 
     void run() {
 
-      BitMap bm{fVideoMode, fpConnection, fpWindow};
+      BitMapImpl bm{fVideoMode, fpConnection, fpWindow};
       xcb_generic_event_t *event;
       while (true) {
         {
@@ -243,8 +255,12 @@ $pimpl_class_delete(WindowImpl);
 $pimpl_method(WindowImpl, void, create);
 $pimpl_method(WindowImpl, void, create, VideoMode, mode, const std::string&, title);
 $pimpl_method(WindowImpl, void, close);
+$pimpl_method(WindowImpl, BitMap&, bitMap);
+$pimpl_method(WindowImpl, void, closeBitmap);
 $pimpl_method_const(WindowImpl, bool, opened);
 $pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
 
+// BitMap& bitMap();
+//     void closeBitmap();
 
 }

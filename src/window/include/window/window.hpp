@@ -4,6 +4,7 @@
 #include <string>
 
 #include <window/video_mode.hpp>
+#include <window/bitmap.hpp>
 
 namespace window {
 
@@ -19,6 +20,9 @@ public:
 
     virtual bool opened() const = 0;
     virtual const VideoMode& videoMode() const = 0;
+
+    virtual BitMap& bitMap() = 0;
+    virtual void closeBitmap() = 0;
 };
 
 }
