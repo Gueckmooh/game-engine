@@ -34,7 +34,7 @@ MODULE_HEADERS_PATH:=$(MODULE_PATH)/include
 HEADERS_EXPORT_PATH:=$(INCLUDE_DIR)/$(HEADERS_EXPORT_DIR)
 
 ifeq ($(OS),windows)
-# include $(MAKERULES_DIR)/windows.mk
+include $(MAKERULES_DIR)/windows.mk
 endif
 
 ifeq ($(COMPONENT_TYPE),cpp)
