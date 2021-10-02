@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# FIND CONFIG.JSON
+pushd . >/dev/null
+while ! test -f config.json
+do
+    cd ..
+done
+ROOT=$PWD
+popd >/dev/null
+
+MAKE_INCLUDE_DIR=${ROOT}/config/makerules
+
+make ROOT=${ROOT} MAKE_INCLUDE_DIR=${MAKE_INCLUDE_DIR} $*

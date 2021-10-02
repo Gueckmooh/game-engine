@@ -1,16 +1,13 @@
-
-MODULE=window
-
-SRCFILES=$(shell find src/ -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
-
-ifeq ($(WINDOWS),1)
-SRCFILES+=$(shell find src/impl/windows -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
-LDFLAGS=-L/usr/x86_64-w64-mingw32/lib
-LDFLAGS+=-lgdi32 -lm
-else
-SRCFILES+=$(shell find src/impl/linux -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
-LDFLAGS+=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image -lm
-endif
-
--include $(MAKEDIR)/common.mk
 .SECONDEXPANSION:
+
+MODULE:=window
+
+SRC_PATH=$(shell pwd)/src
+
+SOURCE_FILES:=$(shell find $(SRC_PATH) -maxdepth 1 -name "*.cpp" -print)
+SOURCE_FILES+=$(shell find $(SRC_PATH)/impl/linux -maxdepth 1 -name "*.cpp" -print)
+LDFLAGS:=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image -lm
+
+HEADERS_EXPORT_DIR=window
+
+include /home/brignone/dev/sandbox/ge-build/config/makerules/common.mk

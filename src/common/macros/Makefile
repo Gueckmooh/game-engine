@@ -1,4 +1,5 @@
-MODULE=common/macros
+MODULE:=common/macros
 
--include $(MAKEDIR)/common.mk
-.SECONDEXPANSION:
+HEADERS_EXPORT_DIR=macros
+
+include /home/brignone/dev/sandbox/ge-build/config/makerules/common.mk

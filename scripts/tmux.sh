@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd $(dirname "$0")/..
-. scripts/prepare_workspace.sh
+source scripts/prepare_workspace.sh
 
 if test $# -ge 1
 then

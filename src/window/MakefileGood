@@ -1,0 +1,136 @@
+
+# MODULE=window
+
+# SRCFILES=$(shell find src/ -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
+
+# ifeq ($(WINDOWS),1)
+# SRCFILES+=$(shell find src/impl/windows -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
+# LDFLAGS=-L/usr/x86_64-w64-mingw32/lib
+# LDFLAGS+=-lgdi32 -lm
+# else
+# SRCFILES+=$(shell find src/impl/linux -maxdepth 1 -regextype posix-awk -regex '.*\.cpp' -print)
+# LDFLAGS+=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image -lm
+# endif
+
+# include $(MAKE_INCLUDE_DIR)/common.mk
+.SECONDEXPANSION:
+
+QUIET ?= 1
+
+ifeq ($(QUIET),1)
+QAT=@
+NQAT=
+else
+QAT=
+endif
+
+ECHO:=$(QAT)echo -e
+
+PWD:=$(shell pwd)
+
+CXX_MSG=$(ECHO) "\tCXX\t$(shell realpath --relative-to="$(PWD)" $<)"
+CXXLD_MSG=$(ECHO) "\tCXXLD\t$(shell realpath --relative-to="$(PWD)" $<)"
+GEN_MSG=$(ECHO) "\tGEN\t$(shell realpath --relative-to="$(PWD)" $@)"
+
+ROOT:=/home/brignone/dev/sandbox/ge-build
+SRC_DIR:=$(ROOT)/src
+BUILD_DIR:=$(ROOT)/build
+LIB_DIR:=$(BUILD_DIR)/lib
+OBJS_DIR:=$(BUILD_DIR)/objs
+DEPS_DIR:=$(BUILD_DIR)/deps
+INCLUDE_DIR:=$(BUILD_DIR)/include
+
+-include $(shell find $(DEPS_DIR) -name "*.d" -print 2>/dev/null)
+
+CXX:=g++
+
+SCRIPTS_DIR:=$(ROOT)/scripts
+
+MODULE:=window
+MODULE_DIR:=window
+MODULE_PATH:=$(SRC_DIR)/$(MODULE_DIR)
+MODULE_SRC_PATH:=$(MODULE_PATH)/src
+MODULE_HEADERS_PATH:=$(MODULE_PATH)/include
+HEADERS_EXPORT_DIR:=window
+HEADERS_EXPORT_PATH:=$(INCLUDE_DIR)/$(HEADERS_EXPORT_DIR)
+
+$(info --> $(MODULE_PATH))
+
+.PHONY: prebuild
+prebuild: export_headers dep_files
+
+### HEADER FILES
+HEADER_FILES:=$(shell find $(MODULE_HEADERS_PATH) -type f -print)
+HEADER_FILES:=$(subst $(MODULE_HEADERS_PATH)/,,$(HEADER_FILES))
+
+SHELL=/bin/bash
+
+EXPORTED_HEADER_FILES:=$(addprefix $(HEADERS_EXPORT_PATH)/, $(HEADER_FILES))
+
+.PHONY: export_headers
+export_headers: $(EXPORTED_HEADER_FILES)
+
+$(HEADERS_EXPORT_PATH)/%: $(MODULE_HEADERS_PATH)/% $(HEADERS_EXPORT_PATH)
+	$(GEN_MSG)
+	$(QAT)$(SCRIPTS_DIR)/export_header $< $@
+
+$(HEADERS_EXPORT_PATH):
+	$(QAT)mkdir -p $@
+
+
+### DEPENDANCY FILES
+SOURCE_FILES:=$(shell find $(MODULE_SRC_PATH) -maxdepth 1 -name "*.cpp" -print)
+SOURCE_FILES+=$(shell find $(MODULE_SRC_PATH)/impl/linux -maxdepth 1 -name "*.cpp" -print)
+SOURCE_FILES:=$(subst $(MODULE_SRC_PATH)/,,$(SOURCE_FILES))
+MODULE_DEPS_PATH:=$(DEPS_DIR)/$(MODULE_DIR)
+MODULE_OBJS_PATH:=$(OBJS_DIR)/$(MODULE_DIR)
+DEP_FILES:=$(addprefix $(MODULE_DEPS_PATH)/, $(SOURCE_FILES:.cpp=.d))
+OBJ_FILES:=$(addprefix $(MODULE_OBJS_PATH)/, $(SOURCE_FILES:.cpp=.o))
+
+INCLUDE_FLAGS:=-I$(INCLUDE_DIR) -I$(MODULE_SRC_PATH)
+CXXFLAGS:=$(INCLUDE_FLAGS) -fPIC
+
+
+.PHONY: dep_files
+dep_files: $(DEP_FILES)
+
+
+
+$(MODULE_DEPS_PATH)/%.d: $(MODULE_SRC_PATH)/%.cpp $$(@D)/.f
+	$(GEN_MSG)
+	$(QAT)$(CXX) $(CXXFLAGS) -MM -MT '$(subst $(MODULE_DEPS_PATH),$(MODULE_OBJS_PATH),$(@:.d=.o))' $< -o $@
+	$(QAT)awk -i inplace -f $(SCRIPTS_DIR)/sanitize_deps.awk $@
+
+%/.f:
+	$(QAT)mkdir -p $(dir $@)
+	$(QAT)touch $@
+
+
+.PHONY: object_files
+object_files: $(OBJ_FILES)
+
+$(MODULE_OBJS_PATH)/%.o: $(MODULE_SRC_PATH)/%.cpp $$(@D)/.f
+	$(CXX_MSG)
+	$(QAT)$(CXX) $(CXXFLAGS) $< -c -o $@
+
+
+TARGET=libwindow.so
+TARGET_PATH=$(LIB_DIR)/$(TARGET)
+
+.PHONY: build
+build: $(TARGET_PATH)
+
+LDFLAGS:=-lxcb -lxcb-xkb -lxkbcommon -lxkbcommon-x11 -lxcb-image -lm
+
+$(TARGET_PATH): $(OBJ_FILES) $$(@D)/.f
+	$(CXXLD_MSG)
+	$(QAT)$(CXX) -shared -o $@ $(OBJ_FILES) $(LDFLAGS)
+
+
+clean:
+	rm -rf $(MODULE_OBJS_PATH) $(MODULE_DEPS_PATH)
+
+mrproper: clean
+	rm -rf $(TARGET_PATH)
+
+.PRECIOUS: %/.f

@@ -70,6 +70,20 @@ func GetModule(moduleName string, conf *config.Config) (*Module, error) {
 	return mod, nil
 }
 
+func GetModuleByFile(filePath string) (*Module, error) {
+	mod, err := parseModule(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkModuleIntegrity(mod)
+	if err != nil {
+		return nil, err
+	}
+
+	return mod, nil
+}
+
 type DepTree struct {
 	Mod  *Module
 	Deps []*DepTree

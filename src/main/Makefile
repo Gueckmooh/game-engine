@@ -1,4 +1,3 @@
 MODULE=main
 
--include $(MAKEDIR)/common.mk
-.SECONDEXPANSION:
+-include $(MAKE_INCLUDE_DIR)/common.mk
