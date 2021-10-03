@@ -15,6 +15,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	genDepsFile := false
+	if len(os.Args) >= 4 && os.Args[3] == "-deps" {
+		genDepsFile = true
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("main: %s\n", err.Error())
@@ -35,31 +40,49 @@ func main() {
 
 	var mkContent string
 
-	mkContent += fmt.Sprintf("MODULE_DIR=%s\n", mod.Name)
-	mkContent += fmt.Sprintf("TARGET_KIND=%s\n", mod.Type)
-	if mod.Type == "shared_library" {
-		mkContent += fmt.Sprintf("TARGET=lib%s\n", mod.Name)
-		mkContent += fmt.Sprintf("COMPONENT_TYPE=cpp\n")
-	} else if mod.Type == "executable" {
-		mkContent += fmt.Sprintf("TARGET=%s\n", mod.Name)
-		mkContent += fmt.Sprintf("COMPONENT_TYPE=cpp\n")
-	} else if mod.Type == "only_headers" {
-		mkContent += fmt.Sprintf("COMPONENT_TYPE=headers\n")
-	}
-
-	var libdeps []string
-	for _, dep := range mod.Dependancies.Dependancy {
-		depMod, err := modules.GetModule(dep, conf)
-		if err != nil {
-			fmt.Printf("main: %s\n", err.Error())
-			os.Exit(1)
+	if !genDepsFile {
+		mkContent += fmt.Sprintf("MODULE_DIR=%s\n", mod.Name)
+		mkContent += fmt.Sprintf("TARGET_KIND=%s\n", mod.Type)
+		if mod.Type == "shared_library" {
+			mkContent += fmt.Sprintf("TARGET=lib%s\n", mod.Name)
+			mkContent += fmt.Sprintf("COMPONENT_TYPE=cpp\n")
+		} else if mod.Type == "executable" {
+			mkContent += fmt.Sprintf("TARGET=%s\n", mod.Name)
+			mkContent += fmt.Sprintf("COMPONENT_TYPE=cpp\n")
+		} else if mod.Type == "only_headers" {
+			mkContent += fmt.Sprintf("COMPONENT_TYPE=headers\n")
 		}
-		if depMod.Type == "shared_library" {
-			libdeps = append(libdeps, depMod.Name)
-		}
-	}
 
-	mkContent += fmt.Sprintf("DEPENDANCIES=%s\n", strings.Join(libdeps, " "))
+		var libdeps []string
+		var moddeps []string
+		for _, dep := range mod.Dependancies.Dependancy {
+			depMod, err := modules.GetModule(dep, conf)
+			if err != nil {
+				fmt.Printf("main: %s\n", err.Error())
+				os.Exit(1)
+			}
+			if depMod.Type == "shared_library" {
+				libdeps = append(libdeps, depMod.Name)
+			}
+			moddeps = append(moddeps, depMod.Name)
+		}
+
+		mkContent += fmt.Sprintf("DEPENDANCIES=%s\n", strings.Join(libdeps, " "))
+		mkContent += fmt.Sprintf("MODULE_DEPENDANCIES=%s\n", strings.Join(moddeps, " "))
+
+	} else {
+		prefix := strings.Replace(mod.Name, "/", "__", -1)
+		prefix = strings.ToUpper(prefix)
+		prefix += "_"
+
+		mkContent += fmt.Sprintf("%sMODULE_DIR=%s\n", prefix, mod.Name)
+		mkContent += fmt.Sprintf("%sMODULE_PATH=$(SRC_DIR)/$(%sMODULE_DIR)\n", prefix, prefix)
+		mkContent += fmt.Sprintf("MAKE=sbmake\n")
+
+		mkContent += fmt.Sprintf(`.PHONY: %s
+%s:
+	$(MAKE) -C $(%sMODULE_PATH) dependancies prebuild build`, mod.Name, mod.Name, prefix)
+	}
 
 	err = ioutil.WriteFile(os.Args[2], []byte(mkContent), 0600)
 	if err != nil {

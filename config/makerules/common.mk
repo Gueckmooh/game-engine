@@ -20,6 +20,7 @@ SRC_DIR:=$(ROOT)/src
 BUILD_DIR:=$(ROOT)/build
 MAKERULES_DIR:=$(CONFIG_DIR)/makerules
 MAKEFILES_DIR:=$(CONFIG_DIR)/makefiles
+MD_MAKEFILES_DIR:=$(MAKEFILES_DIR)/md
 LIB_DIR:=$(BUILD_DIR)/lib
 BIN_DIR:=$(BUILD_DIR)/bin
 OBJS_DIR:=$(BUILD_DIR)/objs
@@ -27,6 +28,10 @@ DEPS_DIR:=$(BUILD_DIR)/deps
 INCLUDE_DIR:=$(BUILD_DIR)/include
 
 include $(MAKEFILES_DIR)/$(MODULE).mk
+-include $(addprefix $(MD_MAKEFILES_DIR)/,$(MODULE_DEPENDANCIES)).mk
+
+.PHONY: dependancies
+dependancies: $(MODULE_DEPENDANCIES)
 
 MODULE_PATH:=$(SRC_DIR)/$(MODULE_DIR)
 MODULE_SRC_PATH:=$(MODULE_PATH)/src

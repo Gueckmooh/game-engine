@@ -17,4 +17,4 @@ endif
 
 HEADERS_EXPORT_DIR=window
 
-include /home/brignone/dev/sandbox/ge-build/config/makerules/common.mk
+include $(MAKE_INCLUDE_DIR)/common.mk
