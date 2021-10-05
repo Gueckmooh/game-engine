@@ -1,10 +1,11 @@
-#include <iostream>
 #include "window/window.hpp"
 
+#include <iostream>
+
 #ifdef __USE_WINDOWS__
-#include "impl/windows/window_impl.hpp"
+#    include "impl/windows/window_impl.hpp"
 #else
-#include "impl/linux/window_impl.hpp"
+#    include "impl/linux/window_impl.hpp"
 #endif
 
 namespace window {
@@ -14,10 +15,10 @@ namespace window {
 // }
 
 void test() {
-  //   window::WindowBuilder wb;
-  // auto win = wb.build();
-  // win->run();
-    WindowImpl win{{1280, 720}, "My awesome title"};
+    //   window::WindowBuilder wb;
+    // auto win = wb.build();
+    // win->run();
+    WindowImpl win{ { 1280, 720 }, "My awesome title" };
 }
 
-}
+}   // namespace window

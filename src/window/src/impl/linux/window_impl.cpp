@@ -1,41 +1,35 @@
 #include "window_impl.hpp"
 
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <iostream>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <thread>
+#include <xcb/shm.h>
+#include <xcb/xcb_image.h>
+#include <xkbcommon/xkbcommon-compose.h>
+#include <xkbcommon/xkbcommon-x11.h>
+
 #include <macros/macros.hpp>
 
+#include "../../genericManip.hpp"
 #include "bitmap_impl.hpp"
 
-#include <xkbcommon/xkbcommon-x11.h>
-#include <xkbcommon/xkbcommon-compose.h>
-#include <xcb/xcb_image.h>
-
-#include <sys/shm.h>
-#include <sys/ipc.h>
-
-#include <xcb/shm.h>
-
-#include <thread>
-#include <chrono>
-
-#include <iostream>
-#include <cstring>
-#include <cmath>
-
-
-#include "../../genericManip.hpp"
-
 namespace {
-constexpr uint32_t EVENT_MASK_FLAGS = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_KEY_PRESS |
-    XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-    XCB_EVENT_MASK_POINTER_MOTION |
-    XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE;//  |
-    // XCB_EVENT_MASK_RESIZE_REDIRECT;
+constexpr uint32_t EVENT_MASK_FLAGS =
+    XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_EXPOSURE
+    | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_POINTER_MOTION
+    | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE;   //  |
+// XCB_EVENT_MASK_RESIZE_REDIRECT;
 
-inline xcb_intern_atom_reply_t* internAtomHelper(xcb_connection_t* conn, bool only_if_exists, const char* str)
-    {
-        auto cookie = xcb_intern_atom(conn, only_if_exists, strlen(str), str);
-        return xcb_intern_atom_reply(conn, cookie, nullptr);
-    }
+inline xcb_intern_atom_reply_t* internAtomHelper(xcb_connection_t* conn,
+                                                 bool only_if_exists, const char* str) {
+    auto cookie = xcb_intern_atom(conn, only_if_exists, strlen(str), str);
+    return xcb_intern_atom_reply(conn, cookie, nullptr);
 }
+}   // namespace
 
 namespace window {
 class WindowImpl::Impl {

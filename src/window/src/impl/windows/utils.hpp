@@ -13,14 +13,12 @@ struct WindowDimension {
         RECT rect;
         GetClientRect(Window, &rect);
         height = rect.bottom - rect.top;
-        width = rect.right - rect.left;
+        width  = rect.right - rect.left;
     }
 
-    friend std::ostream& operator<< (std::ostream& stream, const WindowDimension& dims) {
+    friend std::ostream& operator<<(std::ostream& stream, const WindowDimension& dims) {
         stream << "{ " << dims.width << " x " << dims.height << " }";
         return stream;
     }
-
 };
-
 }

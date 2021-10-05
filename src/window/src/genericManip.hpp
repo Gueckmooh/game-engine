@@ -23,14 +23,16 @@ void renderWeirdGradient(window::BitMap& bm, int xOffset, int yOffset) {
     // }
 
     uint32_t* pixel = bm.data();
-        for (int y = 0; y < bm.mode().height(); ++y) {
-            for (int x = 0; x < bm.mode().width(); ++x) {
-                uint8_t blue = (x + xOffset);
-                uint8_t green = (y + sin(yOffset/31.)*100);
-                *pixel = (green << 8) | blue;
-                ++pixel;
-            }
+    uint8_t red = ((sin(xOffset/31.)+1.)*100);
+    for (int y = 0; y < bm.mode().height(); ++y) {
+        for (int x = 0; x < bm.mode().width(); ++x) {
+
+            uint8_t blue = (x + xOffset);
+            uint8_t green = (y + sin(yOffset/31.)*100);
+            *pixel = (red << 16) | (green << 8) | blue;
+            ++pixel;
         }
+    }
 }
 
 }

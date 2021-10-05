@@ -1,5 +1,18 @@
 #pragma once
 
+/// Force evaluation of an expression
+#define $eval(...) $eval_1($eval_1($eval_1(__VA_ARGS__)))
+#define $eval_1(...) $eval_2($eval_2($eval_2(__VA_ARGS__)))
+#define $eval_2(...) $eval_3($eval_3($eval_3(__VA_ARGS__)))
+#define $eval_3(...) $eval_4($eval_4($eval_4(__VA_ARGS__)))
+#define $eval_4(...) $eval_5($eval_5($eval_5(__VA_ARGS__)))
+#define $eval_5(...) $eval_6($eval_6($eval_6(__VA_ARGS__)))
+#define $eval_6(...) __VA_ARGS__
+
+#define $void()
+#define $defer(id) id $void()
+#define $obstruct(...) __VA_ARGS__ $defer($void)()
+
 /// Concatenate two words.
 #define $cat(a, ...) $cat_(a, __VA_ARGS__)
 #define $cat_(a, ...) a##__VA_ARGS__
@@ -33,3 +46,19 @@
 
 #define $type_void(x) $check($cat($type_void_, x))
 #define $type_void_void $probe(~)
+
+/// Boolean operations.
+#define $not(x) $check($cat($not_, x))
+#define $not_0 $probe(~)
+
+#define $not_bool(n) $check($cat($not_bool_, n))
+#define $not_bool_0 $probe(~)
+#define $bool(n) $not($not_bool(n))
+
+/// Strings operations.
+#define $is_string_empty(s) $check($is_string_empty_##s)
+#define $is_string_empty_ $probe(~)
+
+#define $are_arguments_empty(...) $cat($are_arguments_empty_, $bool($args_count(__VA_ARGS__)))(__VA_ARGS__)
+#define $are_arguments_empty_0(...) 0
+#define $are_arguments_empty_1(value, ...) $not($is_string_empty(value))
