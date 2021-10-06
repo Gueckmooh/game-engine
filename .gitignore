@@ -32,6 +32,12 @@
 *.out
 *.app
 
+build/
+.ccls-cache/
+compile_commands.json
+config/makefiles/
+tools/modules/bin
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe~
