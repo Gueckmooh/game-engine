@@ -9,83 +9,11 @@
 #include <vector>
 
 #include <macros/macros.hpp>
+#include <window/keys.hpp>
+#include <window/window_system_events.hpp>
 
 namespace window {
 namespace input {
-
-#define KeyboardKeys                                                                     \
-    Unknown,          /* Unknown key */                                                  \
-        A,            /* A key */                                                        \
-        B,            /* B key */                                                        \
-        C,            /* C key */                                                        \
-        D,            /* D key */                                                        \
-        E,            /* E key */                                                        \
-        F,            /* F key */                                                        \
-        G,            /* G key */                                                        \
-        H,            /* H key */                                                        \
-        I,            /* I key */                                                        \
-        J,            /* J key */                                                        \
-        K,            /* K key */                                                        \
-        L,            /* L key */                                                        \
-        M,            /* M key */                                                        \
-        N,            /* N key */                                                        \
-        O,            /* O key */                                                        \
-        P,            /* P key */                                                        \
-        Q,            /* Q key */                                                        \
-        R,            /* R key */                                                        \
-        S,            /* S key */                                                        \
-        T,            /* T key */                                                        \
-        U,            /* U key */                                                        \
-        V,            /* V key */                                                        \
-        W,            /* W key */                                                        \
-        X,            /* X key */                                                        \
-        Y,            /* Y key */                                                        \
-        Z,            /* Z key */                                                        \
-        Left,         /* Left key */                                                     \
-        Right,        /* Right key */                                                    \
-        Up,           /* Up key */                                                       \
-        Down,         /* Down key */                                                     \
-        F1,           /* F1 key */                                                       \
-        F2,           /* F2 key */                                                       \
-        F3,           /* F3 key */                                                       \
-        F4,           /* F4 key */                                                       \
-        F5,           /* F5 key */                                                       \
-        F6,           /* F6 key */                                                       \
-        F7,           /* F7 key */                                                       \
-        F8,           /* F8 key */                                                       \
-        F9,           /* F9 key */                                                       \
-        F10,          /* F10 key */                                                      \
-        F11,          /* F11 key */                                                      \
-        F12,          /* F12 key */                                                      \
-        Escape,       /* Escape key */                                                   \
-        LeftAlt,      /* LeftAlt key */                                                  \
-        RightAlt,     /* RightAlt key */                                                 \
-        LeftControl,  /* LeftControl key */                                              \
-        RightControl, /* RightControl key */                                             \
-        LeftShift,    /* LeftShift key */                                                \
-        RightShift,   /* RightShift key */                                               \
-        Delete,       /* Delete key */                                                   \
-        Backspace,    /* Backspace key */
-
-#define ControllerKeys                                                                   \
-    Unknown,           /* Unknown */                                                     \
-        DPadLeft,      /* Left */                                                        \
-        DPadRight,     /* Right */                                                       \
-        DPadUp,        /* Up */                                                          \
-        DPadDown,      /* Down */                                                        \
-        Start,         /* Start */                                                       \
-        Back,          /* Back */                                                        \
-        LeftThumb,     /* Left Thumb */                                                  \
-        RightThumb,    /* Right Thumb */                                                 \
-        LeftShoulder,  /* Left Shoulder */                                               \
-        RightShoulder, /* Right Shoulder */                                              \
-        A,             /* A */                                                           \
-        B,             /* B */                                                           \
-        X,             /* C */                                                           \
-        Y,             /* D */
-
-$enum_class(key, KeyboardKey, KeyboardKeys);
-$enum_class(key, ControllerKey, ControllerKeys);
 
 class Input {
   public:
@@ -145,13 +73,40 @@ class Input {
 };
 
 class ControllerInput {
-    $enum_to_vars_decls(f, ControllerKeys);
+  private:
+    $enum_to_vars_decls(f, _MControllerKeys);
 
   public:
-    $enum_to_vars_getter(getKey, key, ControllerKey, f, ControllerKeys);
-    $enum_to_vars_setter(setKey, key, ControllerKey, f, ControllerKeys);
+    $enum_to_vars_getter(getKey, key, ControllerKey, f, _MControllerKeys);
+    $enum_to_vars_setter(setKey, key, ControllerKey, f, _MControllerKeys);
 
     virtual void readInput() = 0;
+};
+
+class KeyboardInput {
+  private:
+    $enum_to_vars_decls(f, _MKeyboardKeys);
+
+    void handleEvent(WsEvent event) {
+        if (event.type == WsEventType::KeyPressed) {
+            setKey(event.key.which, true);
+        } else if (event.type == WsEventType::KeyReleased) {
+            setKey(event.key.which, false);
+        }
+    }
+
+  public:
+    $enum_to_vars_getter(getKey, key, KeyboardKey, f, _MKeyboardKeys);
+    $enum_to_vars_setter(setKey, key, KeyboardKey, f, _MKeyboardKeys);
+
+    void registerToEventDispatcher(WsEventDispatcher& eventDispatcher) {
+        eventDispatcher.registerHandler(WsEventType::KeyPressed,
+                                        [this](WsEvent event) { handleEvent(event); });
+        eventDispatcher.registerHandler(WsEventType::KeyReleased,
+                                        [this](WsEvent event) { handleEvent(event); });
+    }
+
+    // virtual void readInput() = 0;
 };
 
 class InputCombination {
@@ -192,33 +147,60 @@ class InputCombination {
         }
         return true;
     }
+
+    bool isActive(KeyboardInput& kInput) {
+        if (fIsSimpleInput) {
+            auto key = fSimpleInput.keyboardKey();
+            return kInput.getKey(key);
+        }
+        for (auto& input : fInputVector) {
+            auto key = input.keyboardKey();
+            if (key != key::KeyboardKey::Unknown) {
+                if (!kInput.getKey(key)) { return false; }
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 class InputManager {
   private:
-    std::map<std::string_view, InputCombination> fInputMap;
+    std::multimap<std::string_view, InputCombination> fInputMap;
 
     ControllerInput& fControllerInput;
+    KeyboardInput& fKeyboardInput;
 
   public:
-    InputManager(ControllerInput& controllerInput) : fControllerInput(controllerInput) {}
+    InputManager(ControllerInput& controllerInput, KeyboardInput& keyboardInput)
+        : fControllerInput(controllerInput), fKeyboardInput(keyboardInput) {}
 
     void addMapping(std::string_view key, InputCombination inputs) {
         fInputMap.emplace(key, inputs);
     }
+    // template<class Input_t>
+    // void addMapping(std::string_view key, Input_t&& input) {
+    //     return addMapping(key, Input(std::forward<Input_t>(input)));
+    // }
 
     bool isActive(std::string_view key) {
-        auto it = fInputMap.find(key);
-        if (it == fInputMap.end()) return false;
-        auto ret = it->second.isActive(fControllerInput);
-        return ret;
+        auto range = fInputMap.equal_range(key);
+        for (auto it = range.first; it != range.second; it++) {
+            if (it->second.isActive(fControllerInput)
+                || it->second.isActive(fKeyboardInput))
+                return true;
+        }
+        return false;
     }
 
     void readInput() { fControllerInput.readInput(); }
 };
 
-#undef ControllerKeys
-#undef KeyboardKeys
+#undef _MControllerKeys
+#undef _MKeyboardKeys
+#undef _MMouseKeys
+#undef _MWheelKeys
 
 }   // namespace input
 }   // namespace window
