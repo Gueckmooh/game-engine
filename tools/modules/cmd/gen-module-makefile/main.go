@@ -79,9 +79,20 @@ func main() {
 		mkContent += fmt.Sprintf("%sMODULE_PATH=$(SRC_DIR)/$(%sMODULE_DIR)\n", prefix, prefix)
 		mkContent += fmt.Sprintf("MAKE=sbmake\n")
 
+		var targets []string
+		if len(mod.Dependancies.Dependancy) > 0 {
+			targets = append(targets, "dependancies")
+		}
+		if mod.Type != "executable" {
+			targets = append(targets, "prebuild")
+		}
+		if mod.Type != "only_headers" {
+			targets = append(targets, "build")
+		}
+
 		mkContent += fmt.Sprintf(`.PHONY: %s
 %s:
-	$(MAKE) --no-print-directory -C $(%sMODULE_PATH) dependancies prebuild build`, mod.Name, mod.Name, prefix)
+	$(QAT)$(MAKE) --no-print-directory -C $(%sMODULE_PATH) %s`, mod.Name, mod.Name, prefix, strings.Join(targets, " "))
 	}
 
 	err = ioutil.WriteFile(os.Args[2], []byte(mkContent), 0600)

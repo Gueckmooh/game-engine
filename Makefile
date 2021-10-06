@@ -1,5 +1,14 @@
 .SECONDEXPANSION:
 
+QUIET ?= 1
+
+ifeq ($(QUIET),1)
+QAT=@
+NQAT=
+else
+QAT=
+endif
+
 TOOLS_DIR=tools/modules
 TOOLS_BIN_DIR=$(TOOLS_DIR)/bin
 
@@ -28,22 +37,22 @@ all: prebuild main
 main: main-build
 
 .PHONY: main-build
-main-build: main-prebuild
-	$(MAKE) --no-print-directory -C src/main build
+main-build: main-deps
+	$(QAT)$(MAKE) --no-print-directory -C src/main build
 
-.PHONY: main-prebuild
-main-prebuild: main-deps
-	$(MAKE) --no-print-directory -C src/main prebuild
+# .PHONY: main-prebuild
+# main-prebuild: main-deps
+# 	$(QAT)$(MAKE) --no-print-directory -C src/main prebuild
 
 .PHONY: main-deps
 main-deps:
-	$(MAKE) --no-print-directory -C src/main dependancies
+	$(QAT)$(MAKE) --no-print-directory -C src/main dependancies
 
 .PHONY: prebuild
 prebuild: modules_makefiles
 
 $(GEN_MODULE):
-	$(MAKE) --no-print-directory -C $(TOOLS_DIR)
+	$(QAT)$(MAKE) --no-print-directory -C $(TOOLS_DIR)
 
 .PHONY: modules_makefiles
 modules_makefiles: $(GEN_MODULE) $(MK_MODULE_FILES) $(MK_MD_MODULE_FILES)
