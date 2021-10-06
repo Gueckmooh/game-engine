@@ -81,7 +81,7 @@ func main() {
 
 		mkContent += fmt.Sprintf(`.PHONY: %s
 %s:
-	$(MAKE) -C $(%sMODULE_PATH) dependancies prebuild build`, mod.Name, mod.Name, prefix)
+	$(MAKE) --no-print-directory -C $(%sMODULE_PATH) dependancies prebuild build`, mod.Name, mod.Name, prefix)
 	}
 
 	err = ioutil.WriteFile(os.Args[2], []byte(mkContent), 0600)

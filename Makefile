@@ -29,21 +29,21 @@ main: main-build
 
 .PHONY: main-build
 main-build: main-prebuild
-	$(MAKE) -C src/main build
+	$(MAKE) --no-print-directory -C src/main build
 
 .PHONY: main-prebuild
 main-prebuild: main-deps
-	$(MAKE) -C src/main prebuild
+	$(MAKE) --no-print-directory -C src/main prebuild
 
 .PHONY: main-deps
 main-deps:
-	$(MAKE) -C src/main dependancies
+	$(MAKE) --no-print-directory -C src/main dependancies
 
 .PHONY: prebuild
 prebuild: modules_makefiles
 
 $(GEN_MODULE):
-	$(MAKE) -C $(TOOLS_DIR)
+	$(MAKE) --no-print-directory -C $(TOOLS_DIR)
 
 .PHONY: modules_makefiles
 modules_makefiles: $(GEN_MODULE) $(MK_MODULE_FILES) $(MK_MD_MODULE_FILES)
