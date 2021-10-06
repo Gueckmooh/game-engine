@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <initializer_list>
 #include <iostream>
 #include <map>
@@ -169,12 +170,13 @@ class InputManager {
   private:
     std::multimap<std::string_view, InputCombination> fInputMap;
 
-    ControllerInput& fControllerInput;
-    KeyboardInput& fKeyboardInput;
+    boost::optional<ControllerInput&> fMaybeControllerInput;
+    boost::optional<KeyboardInput&> fMaybeKeyboardInput;
 
   public:
     InputManager(ControllerInput& controllerInput, KeyboardInput& keyboardInput)
-        : fControllerInput(controllerInput), fKeyboardInput(keyboardInput) {}
+        : fMaybeControllerInput(controllerInput), fMaybeKeyboardInput(keyboardInput) {}
+    InputManager(KeyboardInput& keyboardInput) : fMaybeKeyboardInput(keyboardInput) {}
 
     void addMapping(std::string_view key, InputCombination inputs) {
         fInputMap.emplace(key, inputs);
@@ -187,14 +189,16 @@ class InputManager {
     bool isActive(std::string_view key) {
         auto range = fInputMap.equal_range(key);
         for (auto it = range.first; it != range.second; it++) {
-            if (it->second.isActive(fControllerInput)
-                || it->second.isActive(fKeyboardInput))
+            if ((fMaybeControllerInput && it->second.isActive(*fMaybeControllerInput))
+                || (fMaybeKeyboardInput && it->second.isActive(*fMaybeKeyboardInput)))
                 return true;
         }
         return false;
     }
 
-    void readInput() { fControllerInput.readInput(); }
+    void readInput() {
+        if (fMaybeControllerInput) fMaybeControllerInput->readInput();
+    }
 };
 
 #undef _MControllerKeys
