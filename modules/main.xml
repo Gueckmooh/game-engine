@@ -3,5 +3,6 @@
   <baseDir>main</baseDir>
   <dependancies>
     <dependancy>window</dependancy>
+    <dependancy>audio</dependancy>
   </dependancies>
 </module>

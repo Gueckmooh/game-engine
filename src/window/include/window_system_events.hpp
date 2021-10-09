@@ -107,7 +107,7 @@ class WsEventDispatcher {
         if (nEvents == 0) {
             while (dispatchEvent()) {}
         } else {
-            for (int i = 0; i < nEvents; i++) {
+            for (size_t i = 0; i < nEvents; i++) {
                 if (!dispatchEvent()) break;
             }
         }

@@ -18,17 +18,17 @@ public:
         {}
 
     /// Getters
-    const uint32_t width() const { return fWidth; }
+    uint32_t width() const { return fWidth; }
     uint32_t& width() { return fWidth; }
-    const uint32_t height() const { return fHeight; }
+    uint32_t height() const { return fHeight; }
     uint32_t& height() { return fHeight; }
-    const uint32_t bitsPerPixel() const { return fBitsPerPixel; }
+    uint32_t bitsPerPixel() const { return fBitsPerPixel; }
     uint32_t& bitsPerPixel() { return fBitsPerPixel; }
 
-    const uint32_t pitch() const { return fWidth * bytesPerPixel(); }
-    const uint32_t pixelBytes() { return fWidth * fHeight * bytesPerPixel(); }
+    uint32_t pitch() const { return fWidth * bytesPerPixel(); }
+    uint32_t pixelBytes() { return fWidth * fHeight * bytesPerPixel(); }
 
-    const uint32_t bytesPerPixel() const { return fBitsPerPixel / 8; }
+    uint32_t bytesPerPixel() const { return fBitsPerPixel / 8; }
     void setBytesPerPixel(const uint32_t bps) { fBitsPerPixel = bps * 8; }
 
     friend std::ostream& operator<< (std::ostream& stream, const VideoMode& dims) {

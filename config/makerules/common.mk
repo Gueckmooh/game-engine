@@ -28,7 +28,7 @@ DEPS_DIR:=$(BUILD_DIR)/deps
 INCLUDE_DIR:=$(BUILD_DIR)/include
 
 include $(MAKEFILES_DIR)/$(MODULE).mk
--include $(addprefix $(MD_MAKEFILES_DIR)/,$(MODULE_DEPENDANCIES)).mk
+-include $(addsuffix .mk,$(addprefix $(MD_MAKEFILES_DIR)/,$(MODULE_DEPENDANCIES)))
 
 .PHONY: dependancies
 dependancies: $(MODULE_DEPENDANCIES)

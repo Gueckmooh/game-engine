@@ -77,7 +77,7 @@ StatementAttributeLikeMacros:
   - Q_EMIT
 IncludeBlocks:   Regroup
 IncludeCategories:
-  - Regex:           '^<(window|macros)/'
+  - Regex:           '^<(window|macros|audio)/'
     Priority:        2
     SortPriority:    0
     CaseSensitive:   false

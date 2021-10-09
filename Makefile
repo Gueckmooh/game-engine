@@ -69,3 +69,6 @@ $(MK_MD_MODULE_DIR)/%.mk: $(MODULES_DIR)/%.xml $$(@D)/.f
 	$(QAT)mkdir -p $(dir $@)
 	$(QAT)touch $@
 
+.PHONY: mrproper
+mrproper:
+	rm -rf build

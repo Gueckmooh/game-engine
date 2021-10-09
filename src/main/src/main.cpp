@@ -1,5 +1,10 @@
-#include "window/window_test.hpp"
+#include <iostream>
+
+#include <audio/audio_test.hpp>
+#include <window/window_test.hpp>
 
 int main() {
-  window::test();
+    audio::test();
+    window::test();
+    return 0;
 }
