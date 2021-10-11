@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <memory>
-#include <pulse/stream.h>
 
 #include <audio/audio_source.hpp>
 #include <audio/audio_test.hpp>

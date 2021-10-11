@@ -1,11 +1,10 @@
 #pragma once
 
 #include <memory>
-#include <xkbcommon/xkbcommon-compose.h>
-#include <xkbcommon/xkbcommon-x11.h>
+#include <windows.h>
 
 #include <macros/macros.hpp>
-#include <window/input.hpp>
+#include <window/video_mode.hpp>
 #include <window/window.hpp>
 
 #include "../../window_backend.hpp"
@@ -14,7 +13,7 @@ namespace window {
 
 class WindowBackend final : public Window::Backend {
   public:
-    WindowBackend(Window*);
+    WindowBackend(Window*);   // @todo give super ?
     WindowBackend(Window*, VideoMode mode, const std::string& title);
     virtual ~WindowBackend();
 
@@ -32,11 +31,11 @@ class WindowBackend final : public Window::Backend {
     void closeBitmap();
 
     // ----- Plateform specific
-
-    xcb_connection_t* connection() const;
-    xcb_window_t window() const;
+    HWND window();
+    const WNDCLASS* windowClass();
 
   private:
-    $pimpl_decl;
+    $pimpl_decl
 };
+
 }   // namespace window

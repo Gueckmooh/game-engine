@@ -1,4 +1,4 @@
-#include "window_impl.hpp"
+#include "window_backend.hpp"
 
 #include <cmath>
 #include <cstdint>
@@ -14,7 +14,7 @@
 #include <window/window_system_events.hpp>
 
 #include "../../genericManip.hpp"
-#include "bitmap_impl.hpp"
+#include "bitmap_backend.hpp"
 
 namespace {
 // @todo Do I need this?
@@ -171,8 +171,10 @@ void Win32FillSoundBuffer(win32_sound_output* SoundOutput, DWORD ByteToLock,
 
 namespace window {
 
-class WindowImpl::Impl {
+class WindowBackend::Impl {
   private:
+    Window* super;
+
     VideoMode fVideoMode;
     std::string fTitle;
 
@@ -188,47 +190,57 @@ class WindowImpl::Impl {
 
     WsEventDispatcher fEventDispatcher;
 
+    input::KeyboardInput fKeyboardInput;
+    std::unique_ptr<input::InputManager> fpInputManager;
+    std::shared_ptr<input::ControllerInput> fControllerInput;
+
   public:
-    Impl() : fVideoMode(), fTitle("") {
+    Impl(Window* super) : super(super), fVideoMode(), fTitle("") {
         init();
-        run();
+        // run();
     }
 
-    Impl(VideoMode mode, const std::string name)
-        : fVideoMode(std::move(mode)), fTitle(name) {
+    Impl(Window* super, VideoMode mode, const std::string name)
+        : super(super), fVideoMode(std::move(mode)), fTitle(name) {
         init();
-        run();
+        // run();
     }
 
     ~Impl() = default;
 
     void create(VideoMode mode, const std::string& title) {
+        assert(false && "not implemented");
         fVideoMode = std::move(mode);
         fTitle     = title;
         init();
         run();
     }
     void create() {
+        assert(false && "not implemented");
         init();
         run();
     }
     void close() {
+        assert(false && "not implemented");
         // @todo
     }
 
     bool opened() const { return fRunning; }
 
+    void update() { assert(false && "not implemented"); }
+
     const VideoMode& videoMode() const { return fVideoMode; }
+    input::InputManager& inputManager() { return *fpInputManager; }
 
     BitMap& bitMap() {
-        if (!fpBitMap) {
-            fpBitMap =
-                std::make_unique<BitMapImpl>(fVideoMode, fpWindowHandle, &fWindowClass);
-        }
+        if (!fpBitMap) { fpBitMap = std::make_unique<BitMap>(*super); }
         return *fpBitMap;
     }
 
     void closeBitmap() { fpBitMap.reset(nullptr); }
+
+    HWND window() { return fpWindowHandle; }
+    const WNDCLASS* windowClass() { return &fWindowClass; }
 
   private:
     void resize(unsigned width, unsigned height) {
@@ -239,13 +251,13 @@ class WindowImpl::Impl {
     void resizeBitMap(unsigned width, unsigned height) {
         // @todo bullet proof this
         resize(width, height);   // @todo do I need this?
-        static_cast<BitMapImpl&>(bitMap()).resize(width, height);
+        bitMap().backend().resize(width, height);
     }
 
     // @todo remove useless params
     void updateWindow() { bitMap().flush(); }
 
-    void paintWindow() { static_cast<BitMapImpl&>(bitMap()).paint(); }
+    void paintWindow() { bitMap().backend().backend().paint(); }
 
     void processEvents() {
         MSG msg;
@@ -365,6 +377,11 @@ class WindowImpl::Impl {
     }
 
     void init() {
+        fControllerInput = std::make_shared<WinControllerInput>();
+        fpInputManager =
+            std::make_unique<input::InputManager>(*fControllerInput, fKeyboardInput);
+        fKeyboardInput.registerToEventDispatcher(fEventDispatcher);
+
         fWindowClass = {};
 
         fWindowClass.style         = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
@@ -443,12 +460,6 @@ class WindowImpl::Impl {
     };
 
     void run() {
-        input::KeyboardInput kin;
-        std::shared_ptr<input::ControllerInput> ipt =
-            std::make_shared<WinControllerInput>();
-        input::InputManager inputManager{ *ipt, kin };
-        kin.registerToEventDispatcher(fEventDispatcher);
-
         // @todo there is some issues when controller is unplugged
         // inputManager.addMapping("up", input::Input(input::key::ControllerKey::DPadUp));
         // inputManager.addMapping("down",
@@ -458,12 +469,12 @@ class WindowImpl::Impl {
         // inputManager.addMapping("fastDown", { input::key::ControllerKey::LeftShoulder,
         //                                       input::key::ControllerKey::DPadDown });
 
-        inputManager.addMapping("up", input::Input(input::key::KeyboardKey::Up));
-        inputManager.addMapping("down", input::Input(input::key::KeyboardKey::Down));
-        inputManager.addMapping("fastUp", { input::key::KeyboardKey::LeftShift,
-                                            input::key::KeyboardKey::Up });
-        inputManager.addMapping("fastDown", { input::key::KeyboardKey::LeftShift,
-                                              input::key::KeyboardKey::Down });
+        fpInputManager->addMapping("up", input::Input(input::key::KeyboardKey::Up));
+        fpInputManager->addMapping("down", input::Input(input::key::KeyboardKey::Down));
+        fpInputManager->addMapping("fastUp", { input::key::KeyboardKey::LeftShift,
+                                               input::key::KeyboardKey::Up });
+        fpInputManager->addMapping("fastDown", { input::key::KeyboardKey::LeftShift,
+                                                 input::key::KeyboardKey::Down });
 
         fRunning = true;
         if (fpWindowHandle) {
@@ -491,7 +502,7 @@ class WindowImpl::Impl {
             while (fRunning) {
                 processEvents();
 
-                inputManager.readInput();
+                fpInputManager->readInput();
                 fEventDispatcher.dispatchEvents();
 
                 // @todo should we poll this more frequently?
@@ -527,16 +538,16 @@ class WindowImpl::Impl {
 
                 ++xo;
                 // @todo make fast up exclude up?
-                if (inputManager.isActive("fastUp")) {
+                if (fpInputManager->isActive("fastUp")) {
                     std::cout << "fastUp" << std::endl;
                     yo += 3;
-                } else if (inputManager.isActive("fastDown")) {
+                } else if (fpInputManager->isActive("fastDown")) {
                     std::cout << "fastDown" << std::endl;
                     yo -= 3;
-                } else if (inputManager.isActive("up")) {
+                } else if (fpInputManager->isActive("up")) {
                     std::cout << "up" << std::endl;
                     yo += 1;
-                } else if (inputManager.isActive("down")) {
+                } else if (fpInputManager->isActive("down")) {
                     std::cout << "down" << std::endl;
                     yo -= 1;
                 }
@@ -554,16 +565,20 @@ class WindowImpl::Impl {
 };
 
 // Pimpl declarations
-$pimpl_class(WindowImpl);
-$pimpl_class(WindowImpl, VideoMode, mode, const std::string&, title);
-$pimpl_class_delete(WindowImpl);
+$pimpl_class(WindowBackend, Window*, super);
+$pimpl_class(WindowBackend, Window*, super, VideoMode, mode, const std::string&, title);
+$pimpl_class_delete(WindowBackend);
 
-$pimpl_method(WindowImpl, void, create);
-$pimpl_method(WindowImpl, void, create, VideoMode, mode, const std::string&, title);
-$pimpl_method(WindowImpl, void, close);
-$pimpl_method(WindowImpl, BitMap&, bitMap);
-$pimpl_method(WindowImpl, void, closeBitmap);
-$pimpl_method_const(WindowImpl, bool, opened);
-$pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
+$pimpl_method(WindowBackend, void, create);
+$pimpl_method(WindowBackend, void, create, VideoMode, mode, const std::string&, title);
+$pimpl_method(WindowBackend, void, close);
+$pimpl_method(WindowBackend, void, update);
+$pimpl_method(WindowBackend, BitMap&, bitMap);
+$pimpl_method(WindowBackend, void, closeBitmap);
+$pimpl_method_const(WindowBackend, bool, opened);
+$pimpl_method_const(WindowBackend, const VideoMode&, videoMode);
+$pimpl_method(WindowBackend, input::InputManager&, inputManager);
+$pimpl_method(WindowBackend, HWND, window);
+$pimpl_method(WindowBackend, const WNDCLASS*, windowClass);
 
 }   // namespace window

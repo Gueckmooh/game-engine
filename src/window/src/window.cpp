@@ -5,7 +5,7 @@
 #include <window/window.hpp>
 
 #ifdef __USE_WINDOWS__
-#    include "impl/windows/window_impl.hpp"
+#    include "backends/windows/window_backend.hpp"
 #else
 #    include "backends/linux/window_backend.hpp"
 #endif

@@ -6,7 +6,12 @@
 #include <audio/sound_data.hpp>
 
 #include "audio_source_backend.hpp"
-#include "backends/pulse/sound_backend.hpp"
+
+#ifdef __USE_WINDOWS__
+#    include "backends/dsound/sound_backend.hpp"
+#else
+#    include "backends/pulse/sound_backend.hpp"
+#endif
 
 namespace audio {
 

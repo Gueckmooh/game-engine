@@ -2,7 +2,11 @@
 
 #include <audio/audio_engine.hpp>
 
-#include "backends/pulse/audio_engine_backend.hpp"
+#ifdef __USE_WINDOWS__
+#    include "backends/dsound/audio_engine_backend.hpp"
+#else
+#    include "backends/pulse/audio_engine_backend.hpp"
+#endif
 
 namespace audio {
 

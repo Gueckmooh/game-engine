@@ -1,10 +1,10 @@
-#include "bitmap_impl.hpp"
+#include "bitmap_backend.hpp"
 
 namespace window {
 
-class BitMapImpl::Impl {
-// private:
-public:
+class BitMapBackend::Impl {
+    // private:
+  public:
     VideoMode fMode;
     uint32_t* fpBmMemory;
 
@@ -12,18 +12,21 @@ public:
     BITMAPINFO fBmInfo;
     const WNDCLASS* fpWindowClass;
     // PAINTSTRUCT fPaint;
-public:
-    friend class BitMapImpl;
+  public:
+    friend class BitMapBackend;
+    Impl(Window::Backend& window) {
+        WindowBackend& windowBackend = window.backend();
+        fMode                        = windowBackend.videoMode();
+        fpWindowHandle               = windowBackend.window();
+        fpWindowClass                = windowBackend.windowClass();
+    }
+
     Impl(VideoMode mode, HWND windowHandle, const WNDCLASS* pWindowClass)
-        : fMode(mode)
-        , fpWindowHandle(windowHandle)
-        , fpWindowClass(pWindowClass) {
+        : fMode(mode), fpWindowHandle(windowHandle), fpWindowClass(pWindowClass) {
         init();
     }
 
-    ~Impl() {
-        terminate();
-    }
+    ~Impl() { terminate(); }
 
     uint32_t* data() { return fpBmMemory; }
     const VideoMode& mode() const { return fMode; }
@@ -31,7 +34,7 @@ public:
     void flush() {
         if (fpBmMemory) {
             HDC myDeviceContext = GetDC(fpWindowHandle);
-            WindowDimension myDims{fpWindowHandle};
+            WindowDimension myDims{ fpWindowHandle };
             StretchDIBits(myDeviceContext,
                           // x, y, width, height,
                           // x, y, width, height,
@@ -49,12 +52,12 @@ public:
         if (fpBmMemory) {
             PAINTSTRUCT paint;
             HDC myDeviceContext = BeginPaint(fpWindowHandle, &paint);
-            auto x = paint.rcPaint.left;
-            auto y = paint.rcPaint.top;
-            auto height = paint.rcPaint.bottom - paint.rcPaint.top;
-            auto width = paint.rcPaint.right - paint.rcPaint.left;
+            auto x              = paint.rcPaint.left;
+            auto y              = paint.rcPaint.top;
+            auto height         = paint.rcPaint.bottom - paint.rcPaint.top;
+            auto width          = paint.rcPaint.right - paint.rcPaint.left;
             // HDC myDeviceContext = GetDC(fpWindowHandle);
-            WindowDimension myDims{fpWindowHandle};
+            WindowDimension myDims{ fpWindowHandle };
             StretchDIBits(myDeviceContext,
                           // x, y, width, height,
                           // x, y, width, height,
@@ -68,9 +71,9 @@ public:
         }
     }
 
-private:
+  private:
     void resize(uint32_t width, uint32_t height) {
-        fMode.width() = width;
+        fMode.width()  = width;
         fMode.height() = height;
 
         init();
@@ -83,19 +86,20 @@ private:
             fpBmMemory = nullptr;
         }
 
-        fBmInfo.bmiHeader.biSize = sizeof(fBmInfo.bmiHeader);
-        fBmInfo.bmiHeader.biWidth = fMode.width();
-        fBmInfo.bmiHeader.biHeight = -fMode.height(); // Get a top down window
-        fBmInfo.bmiHeader.biPlanes = 1;
-        fBmInfo.bmiHeader.biBitCount = 32;
-        fBmInfo.bmiHeader.biCompression = BI_RGB;
-        fBmInfo.bmiHeader.biSizeImage = 0;
+        fBmInfo.bmiHeader.biSize          = sizeof(fBmInfo.bmiHeader);
+        fBmInfo.bmiHeader.biWidth         = fMode.width();
+        fBmInfo.bmiHeader.biHeight        = -fMode.height();   // Get a top down window
+        fBmInfo.bmiHeader.biPlanes        = 1;
+        fBmInfo.bmiHeader.biBitCount      = 32;
+        fBmInfo.bmiHeader.biCompression   = BI_RGB;
+        fBmInfo.bmiHeader.biSizeImage     = 0;
         fBmInfo.bmiHeader.biXPelsPerMeter = 0;
         fBmInfo.bmiHeader.biYPelsPerMeter = 0;
-        fBmInfo.bmiHeader.biClrUsed = 0;
-        fBmInfo.bmiHeader.biClrImportant = 0;
+        fBmInfo.bmiHeader.biClrUsed       = 0;
+        fBmInfo.bmiHeader.biClrImportant  = 0;
 
-        fpBmMemory = (uint32_t*)VirtualAlloc(0, fMode.pixelBytes(), MEM_COMMIT, PAGE_READWRITE);
+        fpBmMemory =
+            (uint32_t*)VirtualAlloc(0, fMode.pixelBytes(), MEM_COMMIT, PAGE_READWRITE);
     }
 
     void terminate() {
@@ -105,16 +109,17 @@ private:
             fpBmMemory = nullptr;
         }
     }
-
 };
 
-$pimpl_class(BitMapImpl, VideoMode, mode, HWND, windowHandle, const WNDCLASS*, pWindowClass);
-$pimpl_class_delete(BitMapImpl);
+$pimpl_class(BitMapBackend, Window::Backend&, window);
+$pimpl_class(BitMapBackend, VideoMode, mode, HWND, windowHandle, const WNDCLASS*,
+             pWindowClass);
+$pimpl_class_delete(BitMapBackend);
 
-$pimpl_method(BitMapImpl, uint32_t*, data);
-$pimpl_method(BitMapImpl, void, flush);
-$pimpl_method(BitMapImpl, void, paint);
-$pimpl_method_const(BitMapImpl, const VideoMode&, mode);
-$pimpl_method(BitMapImpl, void, resize, uint32_t, width, uint32_t, height);
+$pimpl_method(BitMapBackend, uint32_t*, data);
+$pimpl_method(BitMapBackend, void, flush);
+$pimpl_method(BitMapBackend, void, paint);
+$pimpl_method_const(BitMapBackend, const VideoMode&, mode);
+$pimpl_method(BitMapBackend, void, resize, uint32_t, width, uint32_t, height);
 
-}
+}   // namespace window
