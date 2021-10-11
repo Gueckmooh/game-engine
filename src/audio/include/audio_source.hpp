@@ -37,6 +37,6 @@ class AudioSource {
     Backend& backend() { return *fpBackend; }
 
   protected:
-    std::unique_ptr<Backend> fpBackend;
+    Backend* fpBackend = nullptr;
 };
 }   // namespace audio

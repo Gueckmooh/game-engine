@@ -11,13 +11,13 @@
 namespace audio {
 
 Sound::Sound(AudioEngine& engine, const std::shared_ptr<SoundData>& soundData) {
-    fpBackend = std::make_unique<SoundBackend>(engine.backend(), soundData);
+    fpBackend = new SoundBackend(engine.backend(), soundData);
 }
 
 // Sound::Sound(AudioEngine& engine, const std::string& fileName)
 //     : Sound(engine, engine.share<SoundData>(fileName)) {}
 
-Sound::~Sound() {}
+Sound::~Sound() { delete fpBackend; }
 
 // $pimpl_method_cast(Sound, SoundBaseImpl, void, position, const glm::vec3&, position);
 // $pimpl_property_cast_v(Sound, SoundBaseImpl, float, cutOffDistance);
