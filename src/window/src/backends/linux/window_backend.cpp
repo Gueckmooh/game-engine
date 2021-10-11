@@ -109,16 +109,23 @@ class WindowBackend::Impl {
 
     WsEventDispatcher fEventDispatcher;
 
+    input::KeyboardInput fKeyboardInput;
+    input::InputManager fInputManager;
+
     void pushEvent(WsEvent event) { fEventDispatcher.pushEvent(event); }
 
   public:
-    Impl(Window* super) : super(super), fVideoMode(), fTitle("") {
+    Impl(Window* super)
+        : super(super), fVideoMode(), fTitle(""), fInputManager(fKeyboardInput) {
         init();
         // run();
     }
 
     Impl(Window* super, VideoMode mode, const std::string name)
-        : super(super), fVideoMode(std::move(mode)), fTitle(name) {
+        : super(super)
+        , fVideoMode(std::move(mode))
+        , fTitle(name)
+        , fInputManager(fKeyboardInput) {
         init();
         // run();
     }
@@ -126,22 +133,33 @@ class WindowBackend::Impl {
     ~Impl() = default;
 
     void create(VideoMode mode, const std::string& title) {
+        assert(false && "Not implemented");
         fVideoMode = std::move(mode);
         fTitle     = title;
         init();
         run();
     }
     void create() {
+        assert(false && "Not implemented");
         init();
         run();
     }
     void close() {
         // @todo
+        assert(false && "Not implemented");
+    }
+
+    void update() {
+        processEvents();
+        fEventDispatcher.dispatchEvents();
+        updateWindow();
+        updateGemoetry();
     }
 
     bool opened() const { return fRunning; }
 
     const VideoMode& videoMode() const { return fVideoMode; }
+    input::InputManager& inputManager() { return fInputManager; }
     xcb_connection_t* connection() const { return fpConnection; }
     xcb_window_t window() const { return fpWindow; }
 
@@ -205,6 +223,7 @@ class WindowBackend::Impl {
     }
 
     void init() {
+        fKeyboardInput.registerToEventDispatcher(fEventDispatcher);
         initXcbConnection();
         setupWindow(fVideoMode, fTitle);
         setupXkb();
@@ -581,6 +600,11 @@ class WindowBackend::Impl {
     }
 
     void updateWindow() { bitMap().flush(); }
+    void updateGemoetry() {
+        auto geom = xcb_get_geometry_reply(
+            fpConnection, xcb_get_geometry(fpConnection, fpWindow), nullptr);
+        resizeWindow(geom->width, geom->height);
+    }
 
     void resizeWindow(uint32_t width, uint32_t height) {
         fVideoMode.width()  = width;
@@ -595,16 +619,13 @@ class WindowBackend::Impl {
         // xcb_generic_event_t* event;
 
         // WsEventDispatcher eventDispatcher;
-        input::KeyboardInput kin;
-        kin.registerToEventDispatcher(fEventDispatcher);
-        input::InputManager inputManager(kin);
 
-        inputManager.addMapping("up", input::Input(input::key::KeyboardKey::Up));
-        inputManager.addMapping("down", input::Input(input::key::KeyboardKey::Down));
-        inputManager.addMapping("fastUp", { input::key::KeyboardKey::LeftShift,
-                                            input::key::KeyboardKey::Up });
-        inputManager.addMapping("fastDown", { input::key::KeyboardKey::LeftShift,
-                                              input::key::KeyboardKey::Down });
+        fInputManager.addMapping("up", input::Input(input::key::KeyboardKey::Up));
+        fInputManager.addMapping("down", input::Input(input::key::KeyboardKey::Down));
+        fInputManager.addMapping("fastUp", { input::key::KeyboardKey::LeftShift,
+                                             input::key::KeyboardKey::Up });
+        fInputManager.addMapping("fastDown", { input::key::KeyboardKey::LeftShift,
+                                               input::key::KeyboardKey::Down });
 
         int xo = 0, yo = 0;
         while (true) {
@@ -621,16 +642,16 @@ class WindowBackend::Impl {
             updateWindow();
 
             ++xo;
-            if (inputManager.isActive("fastUp")) {
+            if (fInputManager.isActive("fastUp")) {
                 std::cout << "fastUp" << std::endl;
                 yo += 3;
-            } else if (inputManager.isActive("fastDown")) {
+            } else if (fInputManager.isActive("fastDown")) {
                 std::cout << "fastDown" << std::endl;
                 yo -= 3;
-            } else if (inputManager.isActive("up")) {
+            } else if (fInputManager.isActive("up")) {
                 std::cout << "up" << std::endl;
                 yo += 1;
-            } else if (inputManager.isActive("down")) {
+            } else if (fInputManager.isActive("down")) {
                 std::cout << "down" << std::endl;
                 yo -= 1;
             }
@@ -646,10 +667,12 @@ $pimpl_class_delete(WindowBackend);
 $pimpl_method(WindowBackend, void, create);
 $pimpl_method(WindowBackend, void, create, VideoMode, mode, const std::string&, title);
 $pimpl_method(WindowBackend, void, close);
+$pimpl_method(WindowBackend, void, update);
 $pimpl_method(WindowBackend, BitMap&, bitMap);
 $pimpl_method(WindowBackend, void, closeBitmap);
 $pimpl_method_const(WindowBackend, bool, opened);
 $pimpl_method_const(WindowBackend, const VideoMode&, videoMode);
+$pimpl_method(WindowBackend, input::InputManager&, inputManager);
 $pimpl_method_const(WindowBackend, xcb_connection_t*, connection);
 $pimpl_method_const(WindowBackend, xcb_window_t, window);
 

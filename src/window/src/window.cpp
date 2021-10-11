@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 
+#include <window/input.hpp>
 #include <window/window.hpp>
 
 #ifdef __USE_WINDOWS__
@@ -27,19 +28,11 @@ void Window::close() { fpBackend->close(); }
 
 bool Window::opened() const { return fpBackend->opened(); }
 const VideoMode& Window::videoMode() const { return fpBackend->videoMode(); }
+input::InputManager& Window::inputManager() { return fpBackend->inputManager(); }
 
 BitMap& Window::bitMap() { return fpBackend->bitMap(); }
 void Window::closeBitmap() { fpBackend->closeBitmap(); }
 
-// std::shared_ptr<Window> WindowBuilder::build() {
-//   return std::make_shared<WindowImpl>();
-// }
-
-// void test() {
-//     //   window::WindowBuilder wb;
-//     // auto win = wb.build();
-//     // win->run();
-//     WindowImpl win{ { 1280, 720 }, "My awesome title" };
-// }
+void Window::update() { fpBackend->update(); }
 
 }   // namespace window

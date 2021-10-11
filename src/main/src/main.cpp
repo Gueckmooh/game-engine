@@ -1,74 +1,65 @@
-#include <iostream>
-
-// #include <audio/audio_test.hpp>
-// #include <window/window_test.hpp>
-
 #include <cmath>
+// #include <ctime>
+#include <iostream>
+#include <memory>
 
+#include <audio/audio_engine.hpp>
+#include <audio/examples/examples.hpp>
+#include <audio/sound_data.hpp>
 #include <window/bitmap.hpp>
+#include <window/examples/examples.hpp>
+#include <window/input.hpp>
 #include <window/video_mode.hpp>
 #include <window/window.hpp>
 
-void renderWeirdGradient(window::BitMap& bm, int xOffset, int yOffset) {
-    uint32_t* pixel = bm.data();
-    uint8_t red     = ((sin(xOffset / 31.) + 1.) * 100);
-    for (size_t y = 0; y < bm.mode().height(); ++y) {
-        for (size_t x = 0; x < bm.mode().width(); ++x) {
-
-            uint8_t blue  = (x + xOffset);
-            uint8_t green = (y + sin(yOffset / 31.) * 100);
-            *pixel        = (red << 16) | (green << 8) | blue;
-            ++pixel;
-        }
-    }
-}
-
 int main() {
-    // audio::test();
-    // window::test();
     window::Window win{ { 1280, 720 }, "toto" };
+    audio::AudioEngine en;
+    std::shared_ptr<audio::RawSoundData> sd = audio::examples::sine(en, 256);
+    auto& s                                 = en.make<audio::Sound>(sd);
+    s.looping(true);
+    s.play();
 
-    // input::KeyboardInput kin;
-    // kin.registerToEventDispatcher(fEventDispatcher);
-    // input::InputManager inputManager(kin);
+    auto& inputManager = win.inputManager();
+    inputManager.addMapping("up",
+                            window::input::Input(window::input::key::KeyboardKey::Up));
+    inputManager.addMapping("down",
+                            window::input::Input(window::input::key::KeyboardKey::Down));
+    inputManager.addMapping("fastUp", { window::input::key::KeyboardKey::LeftShift,
+                                        window::input::key::KeyboardKey::Up });
+    inputManager.addMapping("fastDown", { window::input::key::KeyboardKey::LeftShift,
+                                          window::input::key::KeyboardKey::Down });
 
-    // inputManager.addMapping("up", input::Input(input::key::KeyboardKey::Up));
-    // inputManager.addMapping("down", input::Input(input::key::KeyboardKey::Down));
-    // inputManager.addMapping("fastUp", { input::key::KeyboardKey::LeftShift,
-    //                                     input::key::KeyboardKey::Up });
-    // inputManager.addMapping("fastDown", { input::key::KeyboardKey::LeftShift,
-    //                                       input::key::KeyboardKey::Down });
+    // struct timespec begin, end;
 
     int xo = 0, yo = 0;
     while (true) {
-        // processEvents();
-        // fEventDispatcher.dispatchEvents();
-
-        // {
-        //     auto geom = xcb_get_geometry_reply(
-        //         fpConnection, xcb_get_geometry(fpConnection, fpWindow), nullptr);
-        //     resizeWindow(geom->width, geom->height);
-        // }
-
+        // clock_gettime(CLOCK_REALTIME, &begin);
         auto& bitmap = win.bitMap();
-        renderWeirdGradient(bitmap, xo, yo);
-        bitmap.flush();
+        window::examples::renderWeirdGradient(bitmap, xo, yo);
+        win.update();
+        en.update();
 
         ++xo;
-        //     if (inputManager.isActive("fastUp")) {
-        //         std::cout << "fastUp" << std::endl;
-        //         yo += 3;
-        //     } else if (inputManager.isActive("fastDown")) {
-        //         std::cout << "fastDown" << std::endl;
-        //         yo -= 3;
-        //     } else if (inputManager.isActive("up")) {
-        //         std::cout << "up" << std::endl;
-        //         yo += 1;
-        //     } else if (inputManager.isActive("down")) {
-        //         std::cout << "down" << std::endl;
-        //         yo -= 1;
-        //     }
-        // }
+        if (inputManager.isActive("fastUp")) {
+            std::cout << "fastUp" << std::endl;
+            yo += 3;
+        } else if (inputManager.isActive("fastDown")) {
+            std::cout << "fastDown" << std::endl;
+            yo -= 3;
+        } else if (inputManager.isActive("up")) {
+            std::cout << "up" << std::endl;
+            yo += 1;
+        } else if (inputManager.isActive("down")) {
+            std::cout << "down" << std::endl;
+            yo -= 1;
+        }
+
+        // clock_gettime(CLOCK_REALTIME, &end);
+        // int64_t elapsed   = end.tv_nsec - begin.tv_nsec;
+        // double msPerFrame = elapsed / 1'000'000;
+        // double fps        = 1000 / msPerFrame;
+        // std::cout << fps << "fps " << msPerFrame << "mspf" << std::endl;
     }
     return 0;
 }

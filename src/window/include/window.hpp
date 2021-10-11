@@ -3,8 +3,9 @@
 #include <memory>
 #include <string>
 
-#include <window/video_mode.hpp>
 #include <window/bitmap.hpp>
+#include <window/input.hpp>
+#include <window/video_mode.hpp>
 
 namespace window {
 
@@ -25,6 +26,9 @@ class Window {
 
     virtual BitMap& bitMap();
     virtual void closeBitmap();
+    virtual input::InputManager& inputManager();
+
+    virtual void update();
 
   public:
     class Backend;
@@ -33,4 +37,4 @@ class Window {
   private:
     std::unique_ptr<Backend> fpBackend;
 };
-}
+}   // namespace window

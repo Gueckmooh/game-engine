@@ -5,6 +5,7 @@
 #include <xkbcommon/xkbcommon-x11.h>
 
 #include <macros/macros.hpp>
+#include <window/input.hpp>
 #include <window/window.hpp>
 
 #include "../../window_backend.hpp"
@@ -23,6 +24,9 @@ class WindowBackend final : public Window::Backend {
 
     bool opened() const;
     const VideoMode& videoMode() const;
+    input::InputManager& inputManager();
+
+    void update();
 
     BitMap& bitMap();
     void closeBitmap();
