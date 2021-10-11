@@ -8,21 +8,29 @@
 
 namespace window {
 
+class BitMap;
+
 class Window {
-public:
-    Window() = default;
+  public:
+    Window();
     Window(VideoMode mode, const std::string& title);
-    virtual ~Window() = default;
+    virtual ~Window();
 
-    virtual void create() = 0;
-    virtual void create(VideoMode mode, const std::string& title) = 0;
-    virtual void close() = 0;
+    virtual void create();
+    virtual void create(VideoMode mode, const std::string& title);
+    virtual void close();
 
-    virtual bool opened() const = 0;
-    virtual const VideoMode& videoMode() const = 0;
+    virtual bool opened() const;
+    virtual const VideoMode& videoMode() const;
 
-    virtual BitMap& bitMap() = 0;
-    virtual void closeBitmap() = 0;
+    virtual BitMap& bitMap();
+    virtual void closeBitmap();
+
+  public:
+    class Backend;
+    Backend& backend() { return *fpBackend; }
+
+  private:
+    std::unique_ptr<Backend> fpBackend;
 };
-
 }

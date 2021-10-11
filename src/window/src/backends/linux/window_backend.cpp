@@ -1,4 +1,4 @@
-#include "window_impl.hpp"
+#include "window_backend.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -17,7 +17,7 @@
 #include <window/window_system_events.hpp>
 
 #include "../../genericManip.hpp"
-#include "bitmap_impl.hpp"
+#include "bitmap_backend.hpp"
 #include "extent.hpp"
 
 // @note These horizontal mouse button indices
@@ -73,8 +73,10 @@ inline xcb_intern_atom_reply_t* internAtomHelper(xcb_connection_t* conn,
 }   // namespace
 
 namespace window {
-class WindowImpl::Impl {
+class WindowBackend::Impl {
   private:
+    Window* super;
+
     VideoMode fVideoMode;
     std::string fTitle;
 
@@ -110,15 +112,15 @@ class WindowImpl::Impl {
     void pushEvent(WsEvent event) { fEventDispatcher.pushEvent(event); }
 
   public:
-    Impl() : fVideoMode(), fTitle("") {
+    Impl(Window* super) : super(super), fVideoMode(), fTitle("") {
         init();
-        run();
+        // run();
     }
 
-    Impl(VideoMode mode, const std::string name)
-        : fVideoMode(std::move(mode)), fTitle(name) {
+    Impl(Window* super, VideoMode mode, const std::string name)
+        : super(super), fVideoMode(std::move(mode)), fTitle(name) {
         init();
-        run();
+        // run();
     }
 
     ~Impl() = default;
@@ -140,11 +142,11 @@ class WindowImpl::Impl {
     bool opened() const { return fRunning; }
 
     const VideoMode& videoMode() const { return fVideoMode; }
+    xcb_connection_t* connection() const { return fpConnection; }
+    xcb_window_t window() const { return fpWindow; }
 
     BitMap& bitMap() {
-        if (!fpBitMap) {
-            fpBitMap = std::make_unique<BitMapImpl>(fVideoMode, fpConnection, fpWindow);
-        }
+        if (!fpBitMap) { fpBitMap = std::make_unique<BitMap>(*super); }
         return *fpBitMap;
     }
 
@@ -575,7 +577,7 @@ class WindowImpl::Impl {
     }
 
     void resizeDrawable(uint32_t width, uint32_t height) {
-        static_cast<BitMapImpl&>(bitMap()).resize(width, height);
+        bitMap().backend().resize(width, height);
     }
 
     void updateWindow() { bitMap().flush(); }
@@ -637,16 +639,18 @@ class WindowImpl::Impl {
 };
 
 // Pimpl declarations
-$pimpl_class(WindowImpl);
-$pimpl_class(WindowImpl, VideoMode, mode, const std::string&, title);
-$pimpl_class_delete(WindowImpl);
+$pimpl_class(WindowBackend, Window*, super);
+$pimpl_class(WindowBackend, Window*, super, VideoMode, mode, const std::string&, title);
+$pimpl_class_delete(WindowBackend);
 
-$pimpl_method(WindowImpl, void, create);
-$pimpl_method(WindowImpl, void, create, VideoMode, mode, const std::string&, title);
-$pimpl_method(WindowImpl, void, close);
-$pimpl_method(WindowImpl, BitMap&, bitMap);
-$pimpl_method(WindowImpl, void, closeBitmap);
-$pimpl_method_const(WindowImpl, bool, opened);
-$pimpl_method_const(WindowImpl, const VideoMode&, videoMode);
+$pimpl_method(WindowBackend, void, create);
+$pimpl_method(WindowBackend, void, create, VideoMode, mode, const std::string&, title);
+$pimpl_method(WindowBackend, void, close);
+$pimpl_method(WindowBackend, BitMap&, bitMap);
+$pimpl_method(WindowBackend, void, closeBitmap);
+$pimpl_method_const(WindowBackend, bool, opened);
+$pimpl_method_const(WindowBackend, const VideoMode&, videoMode);
+$pimpl_method_const(WindowBackend, xcb_connection_t*, connection);
+$pimpl_method_const(WindowBackend, xcb_window_t, window);
 
 }   // namespace window
