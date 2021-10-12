@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/optional.hpp>
+#include <functional>
 #include <initializer_list>
 #include <iostream>
 #include <map>
@@ -15,6 +16,8 @@
 
 namespace window {
 namespace input {
+
+// @todo move this in cpp
 
 class Input {
   public:
@@ -181,10 +184,6 @@ class InputManager {
     void addMapping(std::string_view key, InputCombination inputs) {
         fInputMap.emplace(key, inputs);
     }
-    // template<class Input_t>
-    // void addMapping(std::string_view key, Input_t&& input) {
-    //     return addMapping(key, Input(std::forward<Input_t>(input)));
-    // }
 
     bool isActive(std::string_view key) {
         auto range = fInputMap.equal_range(key);

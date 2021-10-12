@@ -1,4 +1,3 @@
-
 #include "sound_backend.hpp"
 
 #include <dsound.h>

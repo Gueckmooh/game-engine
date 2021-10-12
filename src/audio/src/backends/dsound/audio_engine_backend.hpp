@@ -1,8 +1,8 @@
 #pragma once
 
 #include <dsound.h>
-#include <pulse/context.h>
-#include <pulse/mainloop.h>
+// #include <pulse/context.h>
+// #include <pulse/mainloop.h>
 
 #include "../../audio_engine_backend.hpp"
 

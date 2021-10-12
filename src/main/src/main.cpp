@@ -33,25 +33,21 @@ int main() {
     // struct timespec begin, end;
 
     int xo = 0, yo = 0;
+    auto& bitmap = win.bitMap();
     while (true) {
         // clock_gettime(CLOCK_REALTIME, &begin);
-        auto& bitmap = win.bitMap();
         window::examples::renderWeirdGradient(bitmap, xo, yo);
         win.update();
         en.update();
 
         ++xo;
         if (inputManager.isActive("fastUp")) {
-            std::cout << "fastUp" << std::endl;
             yo += 3;
         } else if (inputManager.isActive("fastDown")) {
-            std::cout << "fastDown" << std::endl;
             yo -= 3;
         } else if (inputManager.isActive("up")) {
-            std::cout << "up" << std::endl;
             yo += 1;
         } else if (inputManager.isActive("down")) {
-            std::cout << "down" << std::endl;
             yo -= 1;
         }
 
