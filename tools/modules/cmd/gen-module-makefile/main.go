@@ -44,7 +44,7 @@ func main() {
 		mkContent += fmt.Sprintf("MODULE_DIR=%s\n", mod.Name)
 		mkContent += fmt.Sprintf("TARGET_KIND=%s\n", mod.Type)
 		if mod.Type == "shared_library" {
-			mkContent += fmt.Sprintf("TARGET=lib%s\n", mod.Name)
+			mkContent += fmt.Sprintf("TARGET=lib%s\n", strings.Join(strings.Split(mod.Name, "/"), "_"))
 			mkContent += fmt.Sprintf("COMPONENT_TYPE=cpp\n")
 		} else if mod.Type == "executable" {
 			mkContent += fmt.Sprintf("TARGET=%s\n", mod.Name)
@@ -62,7 +62,7 @@ func main() {
 				os.Exit(1)
 			}
 			if depMod.Type == "shared_library" {
-				libdeps = append(libdeps, depMod.Name)
+				libdeps = append(libdeps, strings.Join(strings.Split(depMod.Name, "/"), "_"))
 			}
 			moddeps = append(moddeps, depMod.Name)
 		}
@@ -75,7 +75,7 @@ func main() {
 		prefix = strings.ToUpper(prefix)
 		prefix += "_"
 
-		mkContent += fmt.Sprintf("%sMODULE_DIR=%s\n", prefix, mod.Name)
+		mkContent += fmt.Sprintf("%sMODULE_DIR=%s\n", prefix, mod.BaseDir)
 		mkContent += fmt.Sprintf("%sMODULE_PATH=$(SRC_DIR)/$(%sMODULE_DIR)\n", prefix, prefix)
 		mkContent += fmt.Sprintf("MAKE=sbmake\n")
 

@@ -4,5 +4,6 @@
   <dependancies>
     <dependancy>window</dependancy>
     <dependancy>audio</dependancy>
+    <dependancy>common/logging</dependancy>
   </dependancies>
 </module>

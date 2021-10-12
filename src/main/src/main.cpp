@@ -1,6 +1,7 @@
 #include <cmath>
 // #include <ctime>
 #include <iostream>
+#include <logging/logger.hpp>
 #include <memory>
 
 #include <audio/audio_engine.hpp>

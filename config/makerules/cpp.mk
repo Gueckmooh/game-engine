@@ -1,7 +1,7 @@
 .SECONDEXPANSION:
 
 CXX_MSG=$(ECHO) "\tCXX\t$(shell realpath --relative-to="$(PWD)" $<)"
-CXXLD_MSG=$(ECHO) "\tCXXLD\t$(shell realpath --relative-to="$(PWD)" $<)"
+CXXLD_MSG=$(ECHO) "\tCXXLD\t$(shell realpath --relative-to="$(PWD)" $@)"
 GEN_MSG=$(ECHO) "\tGEN\t$(shell realpath --relative-to="$(PWD)" $@)"
 
 -include $(shell find $(DEPS_DIR) -name "*.d" -print 2>/dev/null)
@@ -42,13 +42,17 @@ CXXFLAGS+=$(CXXSTD)
 
 ifeq ($(DEBUG),1)
 CXXFLAGS+=-g -O0
+else
+CXXFLAGS+=-O3
 endif
 
 ifeq ($(TARGET_KIND),shared_library)
 CXXFLAGS+=-fPIC
 endif
 
-LDFLAGS+=-L$(LIB_DIR) $(addprefix -l,$(DEPENDANCIES))
+LIB_DIRS=$(shell find $(LIB_DIR) -type d -print)
+
+LDFLAGS+=$(addprefix -L,$(LIB_DIRS)) $(addprefix -l,$(DEPENDANCIES))
 
 DLLEXT?=so
 
