@@ -23,7 +23,7 @@ class AudioSource {
     void stop();
 
     /// Plays the current sound data once and remove this sound.
-    // void playOnce();
+    void playOnce();
 
     /**
      * Whether the sound should be replayed at the end.

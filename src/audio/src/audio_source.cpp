@@ -25,10 +25,9 @@ void AudioSource::stop() { fpBackend->playing(false); }
 void AudioSource::looping(bool looping) { fpBackend->looping(looping); }
 bool AudioSource::looping() const { return fpBackend->looping(); }
 
-// void AudioSource::playOnce()
-// {
-//     m_impl->removeOnFinish(true);
-//     m_impl->playing(true);
-// }
+void AudioSource::playOnce() {
+    fpBackend->removeOnFinish(true);
+    fpBackend->playing(true);
+}
 
 }   // namespace audio

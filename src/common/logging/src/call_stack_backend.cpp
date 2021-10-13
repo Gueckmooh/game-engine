@@ -6,6 +6,8 @@
 
 #include "string_utils.hpp"
 
+using namespace utils;
+
 namespace logging {
 
 std::string CallStack::Backend::toString() const {

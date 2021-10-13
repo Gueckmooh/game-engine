@@ -1,5 +1,6 @@
 #include <cmath>
 // #include <ctime>
+#include <chrono>
 #include <iostream>
 #include <logging/logger.hpp>
 #include <memory>
@@ -13,7 +14,25 @@
 #include <window/video_mode.hpp>
 #include <window/window.hpp>
 
+namespace {
+void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
+    static auto lastCounter                          = std::chrono::system_clock::now();
+    auto workCounter                                 = std::chrono::system_clock::now();
+    std::chrono::duration<double> workSecondsElapsed = workCounter - lastCounter;
+    std::chrono::duration<double> secondsElapsed     = workSecondsElapsed;
+    if (secondsElapsed < targetSecondsPerFrame) {
+        while (secondsElapsed < targetSecondsPerFrame) {
+            secondsElapsed = std::chrono::system_clock::now() - lastCounter;
+        }
+    }
+    lastCounter = std::chrono::system_clock::now();
+}
+}   // namespace
+
 int main() {
+    logging::logger.enable("sound");
+    logging::logger.enable("main");
+
     window::Window win{ { 1280, 720 }, "toto" };
     audio::AudioEngine en;
     std::shared_ptr<audio::RawSoundData> sd = audio::examples::sine(en, 256);
@@ -30,16 +49,31 @@ int main() {
                                         window::input::key::KeyboardKey::Up });
     inputManager.addMapping("fastDown", { window::input::key::KeyboardKey::LeftShift,
                                           window::input::key::KeyboardKey::Down });
+    inputManager.addMapping("toto",
+                            window::input::Input(window::input::key::KeyboardKey::A));
 
     // struct timespec begin, end;
+    // auto begin = std::chrono::system_clock::now();
+    // std::chrono::time_point<std::chrono::system_clock,
+    //                         std::chrono::duration<long, std::ratio<1, 1000000000>>>
+    // begin, end;
+    // begin = std::chrono::system_clock::now();
+
+    int monitorRefreshHz             = 60;
+    int gameUpdateHz                 = monitorRefreshHz;
+    double targetMiliSecondsPerFrame = 1000.0f / (double)gameUpdateHz;
 
     int xo = 0, yo = 0;
     auto& bitmap = win.bitMap();
     while (true) {
         // clock_gettime(CLOCK_REALTIME, &begin);
+        auto begin = std::chrono::system_clock::now();
         window::examples::renderWeirdGradient(bitmap, xo, yo);
-        win.update();
-        en.update();
+        if (inputManager.isActive("toto")) {
+            s.stop();
+        } else {
+            s.play();
+        }
 
         ++xo;
         if (inputManager.isActive("fastUp")) {
@@ -52,11 +86,19 @@ int main() {
             yo -= 1;
         }
 
+        waitToBeOnTime(
+            std::chrono::duration<double, std::milli>(targetMiliSecondsPerFrame));
+        win.update();
+        en.update();
+
+        auto end = std::chrono::system_clock::now();
         // clock_gettime(CLOCK_REALTIME, &end);
         // int64_t elapsed   = end.tv_nsec - begin.tv_nsec;
-        // double msPerFrame = elapsed / 1'000'000;
-        // double fps        = 1000 / msPerFrame;
-        // std::cout << fps << "fps " << msPerFrame << "mspf" << std::endl;
+        std::chrono::duration<double> elapsed = end - begin;
+        double msPerFrame                     = elapsed.count() * 1000;   // / 1'000'000;
+        double fps                            = 1000 / msPerFrame;
+        logging::logger.info("main")
+            << (int)round(fps) << "fps " << (msPerFrame) << "mspf" << std::endl;
     }
     return 0;
 }

@@ -3,5 +3,6 @@
   <baseDir>audio</baseDir>
   <dependancies>
     <dependancy>common/macros</dependancy>
+    <dependancy>common/logging</dependancy>
   </dependancies>
 </module>

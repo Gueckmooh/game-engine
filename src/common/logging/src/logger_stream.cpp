@@ -2,6 +2,8 @@
 
 #include "string_utils.hpp"
 
+using namespace utils;
+
 namespace logging {
 
 LoggerStream::LoggerStream(std::ostream& stream, const std::string& resetString)

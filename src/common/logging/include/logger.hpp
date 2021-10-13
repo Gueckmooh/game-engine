@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <logging/logger_stream.hpp>
+#include <set>
 #include <string>
 
 namespace logging {
@@ -32,8 +33,17 @@ class Logger {
      */
     LoggerStream& error(const std::string& category);
 
+    /**
+     * Enables a category
+     */
+    void enable(const std::string& category);
+    bool enabled(const std::string& category);
+
   private:
     LoggerStream m_stream;
+    LoggerStream m_silentStream;
+    std::set<std::string> m_enabledCategories;
+    bool m_silent;
 };
 
 /**

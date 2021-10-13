@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <logging/logger.hpp>
 #include <logging/logger_stream.hpp>
@@ -5,6 +6,8 @@
 #include "string_utils.hpp"
 
 logging::Logger logging::logger;
+
+using namespace utils;
 
 namespace {
 std::string spacing(const std::string& string) {
@@ -17,10 +20,21 @@ std::string spacing(const std::string& string) {
 }   // namespace
 
 namespace logging {
-Logger::Logger() : m_stream(std::cout, "\e[0m") {}
+Logger::Logger()
+    : m_stream(std::cout, "\e[0m"), m_silentStream(std::cout, "\e[0m"), m_silent(false) {
+    m_silentStream.setstate(std::ios::badbit);
+}
 
-LoggerStream& Logger::log() { return m_stream; }
+LoggerStream& Logger::log() {
+    if (m_silent) return m_silentStream;
+    return m_stream;
+}
 LoggerStream& Logger::info(const std::string& category) {
+    if (!enabled(category)) {
+        m_silent = true;
+        return m_silentStream;
+    }
+    m_silent = false;
     m_stream.kind(LoggerKind::Info);
     m_stream.autoExit(false);
     m_stream.prefixString("\e[1m[" + category + "] \e[32m" + spacing(category));
@@ -28,6 +42,11 @@ LoggerStream& Logger::info(const std::string& category) {
 }
 
 LoggerStream& Logger::warning(const std::string& category) {
+    if (!enabled(category)) {
+        m_silent = true;
+        return m_silentStream;
+    }
+    m_silent = false;
     static const std::string follow("/!\\ ");
     m_stream.kind(LoggerKind::Unknown);
     m_stream.autoExit(false);
@@ -37,6 +56,7 @@ LoggerStream& Logger::warning(const std::string& category) {
 }
 
 LoggerStream& Logger::error(const std::string& category) {
+    m_silent = false;
     static const std::string follow("//!\\\\ ");
     m_stream.kind(LoggerKind::Unknown);
     m_stream.autoExit(true);
@@ -44,4 +64,29 @@ LoggerStream& Logger::error(const std::string& category) {
                           + spacing(category + follow));
     return m_stream;
 }
+
+void Logger::enable(const std::string& category) {
+    // should be formed something.somethingElse
+    m_enabledCategories.insert(category);
+}
+
+bool Logger::enabled(const std::string& category) {
+
+    std::string cat = category;
+    std::replace(cat.begin(), cat.end(), '.', ' ');
+
+    std::vector<std::string> sv;
+    sv.reserve(10);
+    std::stringstream ss{ cat };
+    std::string tmp;
+    while (ss >> tmp) {
+        sv.push_back(tmp);
+        if (m_enabledCategories.find(utils::stringJoin(sv, "."))
+            != m_enabledCategories.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 }   // namespace logging
