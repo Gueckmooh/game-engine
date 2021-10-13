@@ -42,11 +42,6 @@ LoggerStream& Logger::info(const std::string& category) {
 }
 
 LoggerStream& Logger::warning(const std::string& category) {
-    if (!enabled(category)) {
-        m_silent = true;
-        return m_silentStream;
-    }
-    m_silent = false;
     static const std::string follow("/!\\ ");
     m_stream.kind(LoggerKind::Unknown);
     m_stream.autoExit(false);

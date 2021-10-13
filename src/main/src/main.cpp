@@ -16,32 +16,32 @@
 
 namespace {
 void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
-    static auto lastCounter                          = std::chrono::system_clock::now();
-    auto workCounter                                 = std::chrono::system_clock::now();
+    static auto lastCounter = std::chrono::high_resolution_clock::now();
+    auto workCounter        = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> workSecondsElapsed = workCounter - lastCounter;
     std::chrono::duration<double> secondsElapsed     = workSecondsElapsed;
     if (secondsElapsed < targetSecondsPerFrame) {
         while (secondsElapsed < targetSecondsPerFrame) {
-            secondsElapsed = std::chrono::system_clock::now() - lastCounter;
+            secondsElapsed = std::chrono::high_resolution_clock::now() - lastCounter;
         }
     }
-    lastCounter = std::chrono::system_clock::now();
+    lastCounter = std::chrono::high_resolution_clock::now();
 }
 
 void initLogger() {
-    // logging::logger.enable("sound");
+    logging::logger.enable("sound");
     // logging::logger.enable("main");
 }
 
 void computeFPS() {
-    static auto begin                     = std::chrono::system_clock::now();
-    auto end                              = std::chrono::system_clock::now();
+    static auto begin                     = std::chrono::high_resolution_clock::now();
+    auto end                              = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - begin;
     double msPerFrame                     = elapsed.count() * 1000;   // / 1'000'000;
     double fps                            = 1000 / msPerFrame;
     logging::logger.info("main.loop.fps")
         << (int)round(fps) << "fps " << (msPerFrame) << "mspf" << std::endl;
-    begin = std::chrono::system_clock::now();
+    begin = std::chrono::high_resolution_clock::now();
 }
 }   // namespace
 
