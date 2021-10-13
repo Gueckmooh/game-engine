@@ -49,7 +49,6 @@ class SoundBackend::Impl {
     Impl(SoundBackend* super, AudioEngine::Backend& engine,
          const std::shared_ptr<SoundData>& soundData)
         : super(super), fEngineBackend(engine.backend()), fpSoundData(soundData) {
-        logging::logger.enable("sound.backend.init");
         pa_sample_spec sampleSpec;
         sampleSpec.format   = utils::formatToByteCount(fpSoundData->sampleFormat());
         sampleSpec.channels = fpSoundData->channels();
@@ -108,11 +107,12 @@ class SoundBackend::Impl {
         logging::logger.log() << "remaining size: " << remainingSize << std::endl;
         logging::logger.log() << "playing size: " << playingSize << std::endl;
 
-        // if (playingSize > 3200) {
-        //     playingSize = 3200;
-        //     logging::logger.log()
-        //         << "playing size is forced to: " << playingSize << std::endl;
-        // }
+        // @todo find the right value
+        if (playingSize > 4000) {
+            playingSize = 4000;
+            logging::logger.log()
+                << "playing size is forced to: " << playingSize << std::endl;
+        }
 
         logging::logger.log().tab(1);
         logging::logger.log() << "playing offset is: " << fPlayingOffset << std::endl;
@@ -127,10 +127,6 @@ class SoundBackend::Impl {
                 << "playing offset now is: " << fPlayingOffset << std::endl;
         }
 
-        if (remainingSize == 0u   // && pa_stream_get_underflow_index(fpStream) >= 0
-        ) {
-            finish();
-        }
         logging::logger.log().tab(-2);
     }
 

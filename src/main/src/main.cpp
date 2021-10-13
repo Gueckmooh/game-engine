@@ -27,11 +27,26 @@ void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
     }
     lastCounter = std::chrono::system_clock::now();
 }
+
+void initLogger() {
+    // logging::logger.enable("sound");
+    // logging::logger.enable("main");
+}
+
+void computeFPS() {
+    static auto begin                     = std::chrono::system_clock::now();
+    auto end                              = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - begin;
+    double msPerFrame                     = elapsed.count() * 1000;   // / 1'000'000;
+    double fps                            = 1000 / msPerFrame;
+    logging::logger.info("main.loop.fps")
+        << (int)round(fps) << "fps " << (msPerFrame) << "mspf" << std::endl;
+    begin = std::chrono::system_clock::now();
+}
 }   // namespace
 
 int main() {
-    logging::logger.enable("sound");
-    logging::logger.enable("main");
+    initLogger();
 
     window::Window win{ { 1280, 720 }, "toto" };
     audio::AudioEngine en;
@@ -67,7 +82,7 @@ int main() {
     auto& bitmap = win.bitMap();
     while (true) {
         // clock_gettime(CLOCK_REALTIME, &begin);
-        auto begin = std::chrono::system_clock::now();
+
         window::examples::renderWeirdGradient(bitmap, xo, yo);
         if (inputManager.isActive("toto")) {
             s.stop();
@@ -85,20 +100,13 @@ int main() {
         } else if (inputManager.isActive("down")) {
             yo -= 1;
         }
+        en.update();
 
         waitToBeOnTime(
             std::chrono::duration<double, std::milli>(targetMiliSecondsPerFrame));
         win.update();
-        en.update();
 
-        auto end = std::chrono::system_clock::now();
-        // clock_gettime(CLOCK_REALTIME, &end);
-        // int64_t elapsed   = end.tv_nsec - begin.tv_nsec;
-        std::chrono::duration<double> elapsed = end - begin;
-        double msPerFrame                     = elapsed.count() * 1000;   // / 1'000'000;
-        double fps                            = 1000 / msPerFrame;
-        logging::logger.info("main")
-            << (int)round(fps) << "fps " << (msPerFrame) << "mspf" << std::endl;
+        computeFPS();
     }
     return 0;
 }
