@@ -62,7 +62,7 @@ class SoundBackend::Impl {
         fpStream =
             pa_stream_new(fEngineBackend.context(), "audio.sound", &sampleSpec, nullptr);
 
-        int latency            = 16000;   // start latency in micro seconds
+        int latency            = 32000;   // start latency in micro seconds
         pa_buffer_attr bufattr = {
             .maxlength = (uint32_t)-1,
             .tlength   = (uint32_t)pa_usec_to_bytes(latency, &sampleSpec),
