@@ -33,7 +33,8 @@ std::shared_ptr<RawSoundData> sine(AudioEngine& aen, uint32_t toneHZ,
         tSine += 2.0f * M_PIf32 * 1.0f / squareWavePeriod;
     }
 
-    for (ssize_t index = 0; index < rawSoundData->sampleNumber(); ++index) {
+    auto sampleNumber = rawSoundData->sampleNumber();
+    for (ssize_t index = 0; index < sampleNumber; ++index) {
         auto sampleValue = baseSine[index % squareWavePeriod];
         *cursor++        = sampleValue;
         *cursor++        = sampleValue;

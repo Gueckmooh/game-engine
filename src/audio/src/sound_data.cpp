@@ -4,8 +4,23 @@
 
 namespace audio {
 
-class RawSoundData::Impl {
-  private:
+namespace {
+inline size_t formatToByteCount(SampleFormat format) {
+    switch (format) {
+    case SampleFormat::Uint8: return sizeof(uint8_t);
+    case SampleFormat::Int16BE: return sizeof(int16_t);
+    case SampleFormat::Int16LE: return sizeof(int16_t);
+    case SampleFormat::Int32BE: return sizeof(int32_t);
+    case SampleFormat::Int32LE: return sizeof(int32_t);
+    case SampleFormat::Float32: return sizeof(float);
+    case SampleFormat::Unknown: return 0;
+    }
+    return 0;
+}
+}   // namespace
+
+class SoundData::Impl {
+  protected:
     SampleFormat fFormat;
     uint8_t fChannels;
     uint32_t fRate;
@@ -16,17 +31,9 @@ class RawSoundData::Impl {
     uint8_t* fpData;
 
   public:
-    Impl(SampleFormat format, uint8_t channels, uint32_t rate, uint32_t nSample)
-        : fFormat(format), fChannels(channels), fRate(rate), fSampleCount(nSample) {
-        if (fSampleCount == 0) fSampleCount = rate;
-        fBytesPerSample = formatToByteCount(fFormat) * fChannels;
-        fBufferSize     = fBytesPerSample * fSampleCount;
-        fpData          = new uint8_t[fBufferSize];
-    }
+    Impl()          = default;
+    virtual ~Impl() = default;
 
-    ~Impl() { delete[] fpData; }
-
-    /// The raw data (encoded interlaced according to sampleFormat).
     uint8_t* data() { return fpData; }
     const uint8_t* data() const { return fpData; }
 
@@ -54,6 +61,26 @@ class RawSoundData::Impl {
     uint32_t normalizedSize() const {
         return 0;   // @fixit
     }
+};
+
+class RawSoundData::Impl : public SoundData::Impl {
+  private:
+  public:
+    Impl(SampleFormat format, uint8_t channels, uint32_t rate, uint32_t sampleCound)
+        : SoundData::Impl() {
+        fFormat      = format;
+        fChannels    = channels;
+        fRate        = rate;
+        fSampleCount = sampleCound;
+        if (fSampleCount == 0) fSampleCount = rate;
+        fBytesPerSample = formatToByteCount(fFormat) * fChannels;
+        fBufferSize     = fBytesPerSample * fSampleCount;
+        fpData          = new uint8_t[fBufferSize];
+    }
+
+    ~Impl() { delete[] fpData; }
+
+    /// The raw data (encoded interlaced according to sampleFormat).
 
     void resize(uint32_t newSampleCount) {
         // @todo make this shit work
@@ -65,37 +92,34 @@ class RawSoundData::Impl {
         delete[] fpData;
         fpData = newData;
     }
-
-  private:
-    inline size_t formatToByteCount(SampleFormat format) const {
-        switch (format) {
-        case SampleFormat::Uint8: return sizeof(uint8_t);
-        case SampleFormat::Int16BE: return sizeof(int16_t);
-        case SampleFormat::Int16LE: return sizeof(int16_t);
-        case SampleFormat::Int32BE: return sizeof(int32_t);
-        case SampleFormat::Int32LE: return sizeof(int32_t);
-        case SampleFormat::Float32: return sizeof(float);
-        case SampleFormat::Unknown: return 0;
-        }
-        return 0;
-    }
 };
 
 // // Pimpl declarations
-$pimpl_class(RawSoundData, SampleFormat, format, uint8_t, channels, uint32_t, rate,
-             uint32_t, length);
+
+SoundData::SoundData() : fpImpl(std::make_shared<Impl>()) {}
+SoundData::SoundData(std::shared_ptr<Impl> pImpl) : fpImpl(pImpl) {}
+$pimpl_class_delete(SoundData);
+
+$pimpl_method(SoundData, uint8_t*, data);
+$pimpl_method_const(SoundData, const uint8_t*, data);
+$pimpl_method_const(SoundData, uint32_t, sampleNumber);
+$pimpl_method_const(SoundData, uint32_t, size);
+$pimpl_method_const(SoundData, uint32_t, rate);
+$pimpl_method_const(SoundData, uint8_t, channels);
+$pimpl_method_const(SoundData, uint8_t, bytesPerSample);
+$pimpl_method_const(SoundData, SampleFormat, sampleFormat);
+$pimpl_method_const(SoundData, const float*, normalizedData);
+$pimpl_method_const(SoundData, uint32_t, normalizedSize);
+
+RawSoundData::RawSoundData(SampleFormat format, uint8_t channels, uint32_t rate,
+                           uint32_t length)
+    : SoundData(std::make_shared<Impl>(format, channels, rate, length)) {}
+
 $pimpl_class_delete(RawSoundData);
 
-$pimpl_method(RawSoundData, uint8_t*, data);
-$pimpl_method_const(RawSoundData, const uint8_t*, data);
-$pimpl_method_const(RawSoundData, uint32_t, sampleNumber);
-$pimpl_method_const(RawSoundData, uint32_t, size);
-$pimpl_method_const(RawSoundData, uint32_t, rate);
-$pimpl_method_const(RawSoundData, uint8_t, channels);
-$pimpl_method_const(RawSoundData, uint8_t, bytesPerSample);
-$pimpl_method_const(RawSoundData, SampleFormat, sampleFormat);
-$pimpl_method_const(RawSoundData, const float*, normalizedData);
-$pimpl_method_const(RawSoundData, uint32_t, normalizedSize);
-$pimpl_method(RawSoundData, void, resize, uint32_t, newSampleCount);
+// $pimpl_method(RawSoundData, void, resize, uint32_t, newSampleCount);
+void RawSoundData::resize(uint32_t newSampleCount) {
+    dynamic_cast<Impl*>(fpImpl.get())->resize(newSampleCount);
+}
 
 }   // namespace audio
