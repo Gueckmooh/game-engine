@@ -333,6 +333,7 @@ class WindowBackend::Impl {
         case XKB_KEY_Z: return input::key::KeyboardKey::Z;
         case XKB_KEY_BackSpace: return input::key::KeyboardKey::Backspace;
         case XKB_KEY_Escape: return input::key::KeyboardKey::Escape;
+        case XKB_KEY_space: return input::key::KeyboardKey::Space;
         case XKB_KEY_F1: return input::key::KeyboardKey::F1;
         case XKB_KEY_F2: return input::key::KeyboardKey::F2;
         case XKB_KEY_F3: return input::key::KeyboardKey::F3;

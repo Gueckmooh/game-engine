@@ -6,10 +6,12 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include <logging/logger.hpp>
 #include <macros/macros.hpp>
 #include <window/keys.hpp>
 #include <window/window_system_events.hpp>
@@ -172,9 +174,33 @@ class InputCombination {
 class InputManager {
   private:
     std::multimap<std::string_view, InputCombination> fInputMap;
+    std::set<std::string_view> fRecordFilter;
+
+    std::set<std::string_view> fActiveInput;
+    std::set<std::string_view> fUpInput;
+    std::set<std::string_view> fDownInput;
 
     boost::optional<ControllerInput&> fMaybeControllerInput;
     boost::optional<KeyboardInput&> fMaybeKeyboardInput;
+
+    bool fRecording        = false;
+    bool fReplaying        = false;
+    unsigned fReplayCursor = 0;
+    std::vector<std::set<std::string_view>> fRecord;
+
+    void setActive(std::string_view key, bool value) {
+        if (value) {
+            if (fActiveInput.find(key) == fActiveInput.end()) {
+                fUpInput.insert(key);
+                fActiveInput.insert(key);
+            }
+        } else {
+            if (fActiveInput.find(key) != fActiveInput.end()) {
+                fDownInput.insert(key);
+                fActiveInput.erase(key);
+            }
+        }
+    }
 
   public:
     InputManager(ControllerInput& controllerInput, KeyboardInput& keyboardInput)
@@ -185,18 +211,72 @@ class InputManager {
         fInputMap.emplace(key, inputs);
     }
 
+    void dontRecord(std::string_view key) { fRecordFilter.insert(key); }
+
     bool isActive(std::string_view key) {
-        auto range = fInputMap.equal_range(key);
-        for (auto it = range.first; it != range.second; it++) {
-            if ((fMaybeControllerInput && it->second.isActive(*fMaybeControllerInput))
-                || (fMaybeKeyboardInput && it->second.isActive(*fMaybeKeyboardInput)))
-                return true;
+        if (!fReplaying || (fRecordFilter.find(key) != fRecordFilter.end())) {
+            return fActiveInput.find(key) != fActiveInput.end();
+        } else {
+            auto cursor = fReplayCursor - 1;
+            if (cursor < fRecord.size())
+                return fRecord.at(cursor).find(key) != fRecord.at(cursor).end();
+            else
+                return false;
         }
-        return false;
+    }
+
+    bool isUp(std::string_view key) {
+        // @todo record that
+        return fUpInput.find(key) != fUpInput.end();
+    }
+
+    bool isDown(std::string_view key) {
+        // @todo record that
+        return fDownInput.find(key) != fDownInput.end();
     }
 
     void readInput() {
         if (fMaybeControllerInput) fMaybeControllerInput->readInput();
+    }
+
+    void computeInput() {
+        fUpInput.clear();
+        fDownInput.clear();
+        for (auto pair : fInputMap) {
+            if ((fMaybeControllerInput && pair.second.isActive(*fMaybeControllerInput))
+                || (fMaybeKeyboardInput && pair.second.isActive(*fMaybeKeyboardInput))) {
+                setActive(pair.first, true);
+            } else {
+                setActive(pair.first, false);
+            }
+        }
+        if (fRecording) fRecord.push_back(fActiveInput);
+        if (fReplaying) fReplayCursor++;
+    }
+
+    // ----- For recording
+    void startRecord() {
+        logging::logger.info("window.input.InputManager") << "start record" << std::endl;
+        fRecord.clear();
+        fRecording = true;
+    }
+
+    void stopRecord() {
+        logging::logger.info("window.input.InputManager") << "stop record" << std::endl;
+        fRecording = false;
+    }
+
+    void startReplay() {
+        if (!fReplaying)
+            logging::logger.info("window.input.InputManager")
+                << "start replay" << std::endl;
+        fReplayCursor = 0;
+        fReplaying    = true;
+    }
+
+    void stopReplay() {
+        logging::logger.info("window.input.InputManager") << "stop replay" << std::endl;
+        fReplaying = false;
     }
 };
 

@@ -64,7 +64,15 @@ endif
 
 ### BUILD TARGET
 .PHONY: build
-build: $(TARGET_PATH)
+ifneq ($(POST_BUILD),)
+$(info POST_BUILD $(POST_BUILD))
+build: in-build $(POST_BUILD)
+else
+build: in-build
+endif
+
+.PHONY: in-build
+in-build: $(TARGET_PATH)
 
 
 ### PREBUILD TARGET

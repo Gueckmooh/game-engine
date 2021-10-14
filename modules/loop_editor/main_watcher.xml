@@ -1,6 +1,6 @@
-<module name="main">
+<module name="loop_editor/main_watcher">
   <type>executable</type>
-  <baseDir>main</baseDir>
+  <baseDir>loop_editor/main_watcher</baseDir>
   <dependancies>
     <dependancy>window</dependancy>
     <dependancy>audio</dependancy>

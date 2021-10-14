@@ -1,19 +1,24 @@
 #include <cmath>
 // #include <ctime>
 #include <chrono>
+#include <file_watcher/file_watcher.hpp>
 #include <iostream>
-#include <logging/logger.hpp>
 #include <memory>
+#include <thread>
 
 #include <audio/audio_engine.hpp>
 #include <audio/examples/examples.hpp>
 #include <audio/sound_data.hpp>
+#include <logging/logger.hpp>
 #include <window/bitmap.hpp>
 #include <window/examples/examples.hpp>
 #include <window/input.hpp>
 #include <window/video_mode.hpp>
 #include <window/window.hpp>
 
+using namespace std::chrono_literals;
+
+#if 0
 namespace {
 void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
     static auto lastCounter = std::chrono::high_resolution_clock::now();
@@ -110,3 +115,20 @@ int main() {
     }
     return 0;
 }
+#else
+
+int main() {
+    file_watcher::FileWatcher watcher;
+    watcher.watch("/tmp/toto.txt");
+
+    while (true) {
+        std::this_thread::sleep_for(500ms);
+
+        while (auto event = watcher.pollEvent()) {
+            std::cout << "FileWatcher: watched file " << event->path << " " << event->type
+                      << std::endl;
+        }
+    }
+}
+
+#endif

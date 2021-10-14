@@ -56,6 +56,13 @@
     enum class Enum : public BaseEnum { __VA_ARGS__ };                                   \
     }
 
+#define $enum_class_nonamespace(Namespace, Enum, ...)                                    \
+    $enum_class_nonamespace_(Enum, __VA_ARGS__);                                         \
+    $enum_stringify(Namespace, Enum, __VA_ARGS__);                                       \
+    $enum_ostream(Namespace, Enum);
+
+#define $enum_class_nonamespace_(Enum, ...) enum class Enum { __VA_ARGS__ };
+
 #define $enum_class(Namespace, Enum, ...)                                                \
     $enum_class_(Namespace, Enum, __VA_ARGS__);                                          \
     $enum_stringify(Namespace, Enum, __VA_ARGS__);                                       \

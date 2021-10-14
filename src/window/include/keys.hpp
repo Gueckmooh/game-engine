@@ -52,6 +52,7 @@ namespace input {
         F11,          /* F11 key */                                                      \
         F12,          /* F12 key */                                                      \
         Escape,       /* Escape key */                                                   \
+        Space,        /* Space key */                                                    \
         LeftAlt,      /* LeftAlt key */                                                  \
         RightAlt,     /* RightAlt key */                                                 \
         LeftControl,  /* LeftControl key */                                              \
