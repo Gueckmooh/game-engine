@@ -1,5 +1,7 @@
 #include "bitmap_backend.hpp"
 
+#include <cstring>
+
 namespace window {
 class BitMapBackend::Impl {
   private:
@@ -11,6 +13,8 @@ class BitMapBackend::Impl {
     xcb_gcontext_t fGcontext;
 
     uint32_t* fpData;
+    // @XXX: this is a workaround to not have screen to do crazy stuff
+    uint32_t* fpUserData;
 
   public:
     friend class BitMapBackend;
@@ -34,12 +38,16 @@ class BitMapBackend::Impl {
 
         xcb_free_pixmap(fpConnection, fPix);
         fpData = nullptr;
+
+        delete (uint8_t*)fpUserData;
     }
 
-    uint32_t* data() { return fpData; }
+    uint32_t* data() { return fpUserData; }
     const VideoMode& mode() const { return fMode; };
 
     void flush() {
+        memcpy(fpData, fpUserData, fMode.pixelBytes());
+
         xcb_copy_area(fpConnection, fPix, fpWindow, fGcontext, 0, 0, 0, 0, fMode.width(),
                       fMode.height());
 
@@ -105,7 +113,8 @@ class BitMapBackend::Impl {
         xcb_shm_attach(fpConnection, fInfo.shmseg, fInfo.shmid, 0);
         shmctl(fInfo.shmid, IPC_RMID, 0);
 
-        fpData = (uint32_t*)fInfo.shmaddr;
+        fpData     = (uint32_t*)fInfo.shmaddr;
+        fpUserData = (uint32_t*)new uint8_t[fMode.pixelBytes()];
 
         fPix = xcb_generate_id(fpConnection);
         xcb_shm_create_pixmap(fpConnection, fPix, fpWindow, fMode.width(), fMode.height(),
