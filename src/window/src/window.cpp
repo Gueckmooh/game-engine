@@ -14,8 +14,8 @@ namespace window {
 
 Window::Window() { fpBackend = std::make_unique<WindowBackend>(this); }
 
-Window::Window(VideoMode mode, const std::string& title) {
-    fpBackend = std::make_unique<WindowBackend>(this, mode, title);
+Window::Window(VideoMode mode, const std::string& title, Flag options) {
+    fpBackend = std::make_unique<WindowBackend>(this, mode, title, options);
 }
 
 Window::~Window() {}

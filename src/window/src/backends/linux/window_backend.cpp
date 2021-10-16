@@ -112,6 +112,8 @@ class WindowBackend::Impl {
     input::KeyboardInput fKeyboardInput;
     input::InputManager fInputManager;
 
+    Window::Flag fOptions;
+
     void pushEvent(WsEvent event) { fEventDispatcher.pushEvent(event); }
 
   public:
@@ -121,11 +123,12 @@ class WindowBackend::Impl {
         // run();
     }
 
-    Impl(Window* super, VideoMode mode, const std::string name)
+    Impl(Window* super, VideoMode mode, const std::string name, Window::Flag options)
         : super(super)
         , fVideoMode(std::move(mode))
         , fTitle(name)
-        , fInputManager(fKeyboardInput) {
+        , fInputManager(fKeyboardInput)
+        , fOptions(options) {
         init();
         // run();
     }
@@ -153,7 +156,7 @@ class WindowBackend::Impl {
         processEvents();
         fEventDispatcher.dispatchEvents();
         updateWindow();
-        updateGemoetry();
+        if ((fOptions & Window::NO_RESIZE) == 0) updateGemoetry();
     }
 
     bool opened() const { return fRunning; }
@@ -662,7 +665,8 @@ class WindowBackend::Impl {
 
 // Pimpl declarations
 $pimpl_class(WindowBackend, Window*, super);
-$pimpl_class(WindowBackend, Window*, super, VideoMode, mode, const std::string&, title);
+$pimpl_class(WindowBackend, Window*, super, VideoMode, mode, const std::string&, title,
+             Window::Flag, option);
 $pimpl_class_delete(WindowBackend);
 
 $pimpl_method(WindowBackend, void, create);

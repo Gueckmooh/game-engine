@@ -13,8 +13,15 @@ class BitMap;
 
 class Window {
   public:
+    // @todo make this an enum class
+    enum Flag {
+        NO_OPTION = 0,
+        NO_RESIZE = 1,
+        DEFAULT   = NO_OPTION,
+    };
+
     Window();
-    Window(VideoMode mode, const std::string& title);
+    Window(VideoMode mode, const std::string& title, Flag options = DEFAULT);
     virtual ~Window();
 
     virtual void create();

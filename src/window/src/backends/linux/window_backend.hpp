@@ -15,7 +15,8 @@ namespace window {
 class WindowBackend final : public Window::Backend {
   public:
     WindowBackend(Window*);
-    WindowBackend(Window*, VideoMode mode, const std::string& title);
+    WindowBackend(Window*, VideoMode mode, const std::string& title,
+                  Window::Flag option = Window::DEFAULT);
     virtual ~WindowBackend();
 
     void create();
