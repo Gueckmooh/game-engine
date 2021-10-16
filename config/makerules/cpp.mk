@@ -50,9 +50,9 @@ ifeq ($(TARGET_KIND),shared_library)
 CXXFLAGS+=-fPIC
 endif
 
-LIB_DIRS=$(shell find $(LIB_DIR) -type d -print)
-
-LDFLAGS+=$(addprefix -L,$(LIB_DIRS)) $(addprefix -l,$(DEPENDANCIES))
+# @todo Do I even need this?
+# LIB_DIRS=$(shell find $(LIB_DIR) -type d -print)
+LDFLAGS+=$(addprefix -L,$(LIB_DIR)) $(addprefix -l,$(DEPENDANCIES))
 
 DLLEXT?=so
 
