@@ -7,6 +7,7 @@
 #include <main_loop/game_data.hpp>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include <audio/audio_engine.hpp>
 #include <audio/examples/examples.hpp>
@@ -20,29 +21,50 @@
 
 using namespace std::chrono_literals;
 
+using namespace game_data;
+
 namespace {
 
-template<int Height, int Width>
 class TileMap {
   public:
-    // uint32_t tiles[Height][Width];
+    std::vector<std::vector<uint32_t>> tiles;
+    size_t width;
+    size_t height;
+    TileMap(std::initializer_list<std::initializer_list<uint32_t>> init) {
+        size_t height = init.size();
+        size_t width  = 0;
+        for (auto line : init) {
+            tiles.push_back(line);
 
-    std::array<std::array<uint32_t, Width>, Height> tiles;
-    int width;
-    int height;
-    // TileMap(uint32_t tiles[Height][Width]) : tiles(tiles), width(Width), height(Height)
-    // {}
-    TileMap(std::array<std::array<uint32_t, Width>, Height>&& tiles)
-        : tiles(std::move(tiles)), width(Width), height(Height) {}
+            if (width == 0)
+                width = line.size();
+            else {
+                assert((width == line.size())
+                       && "The width of all the lines must be the same");
+            }
+        }
+        this->width  = width;
+        this->height = height;
+    }
 
-    uint32_t getTile(int X, int Y, int W, int H) {
-        float tileW = ((float)W) / ((float)Width);
-        float tileH = ((float)H) / ((float)Height);
+    uint32_t getTile(float X, float Y, float W, float H) {
+        float tileW = W / ((float)width);
+        float tileH = H / ((float)height);
 
         float tileX = X / tileW;
         float tileY = Y / tileH;
 
-        return tiles[tileY][tileX];
+        return tiles[(size_t)tileY][(size_t)tileX];
+    }
+
+    uint32_t getTile(Vector<float> pos, Vector<float> displaySize) {
+        float tileW = displaySize.X / ((float)width);
+        float tileH = displaySize.Y / ((float)height);
+
+        float tileX = pos.X / tileW;
+        float tileY = pos.Y / tileH;
+
+        return tiles[(size_t)tileY][(size_t)tileX];
     }
 };
 
@@ -62,34 +84,23 @@ extern "C" void initInputManager(window::input::InputManager& inputManager) {
 }
 
 // @todo fix this shit
-TileMap<9, 17> tileMap(std::array<std::array<uint32_t, 17>, 9>{
-    std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-    std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+TileMap tileMap({
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
 });
 
-// TileMap<19, 33> tileMap2(std::array<std::array<uint32_t, 17>, 9>{
-//     std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-//     std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-//     std::array<uint32_t, 17>{ 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-// });
-
-bool isOk(int X, int Y, window::BitMap& bm) {
-    return (tileMap.getTile(X, Y, bm.mode().width(), bm.mode().height()) == 0);
+bool isOk(Vector<float> vec, window::BitMap& bm) {
+    return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
 }
 
+#if 0
 extern "C" void processInputs(window::input::InputManager& inputManager,
                               game_data::GameData& gd, window::BitMap& bm) {
 
@@ -116,6 +127,50 @@ extern "C" void processInputs(window::input::InputManager& inputManager,
     gd.player.X = targetX;
     gd.player.Y = targetY;
 }
+#else
+bool checkCollision(Vector<float> vec, TileMap tMap, Vector<float> mapSize) {
+    float tileX = vec.X / mapSize.X;
+    float tileY = vec.Y / mapSize.Y;
+
+    return tMap.tiles[tileY][tileX] == 0;
+}
+
+bool checkCollision(Player::ColisionArea col, TileMap tMap, Vector<float> mapSize) {
+    float tileW = mapSize.X / ((float)tMap.width);
+    float tileH = mapSize.Y / ((float)tMap.height);
+
+    auto tot = Vector<float>(tileW, tileH);
+    return checkCollision(col.bottomLeft(), tMap, tot)
+           && checkCollision(col.bottomRight(), tMap, tot)
+           && checkCollision(col.topLeft(), tMap, tot)
+           && checkCollision(col.topRight(), tMap, tot);
+}
+
+extern "C" void processInputs(window::input::InputManager& inputManager,
+                              game_data::GameData& gd, window::BitMap& bm) {
+    Vector<float> dT{ 0.0f, 0.0f };
+
+    if (inputManager.isActive("up")) {
+        dT -= { 0.0f, 2.0f };
+    } else if (inputManager.isActive("down")) {
+        dT += { 0.0f, 2.0f };
+    }
+
+    if (inputManager.isActive("left")) {
+        dT -= { 2.0f, 0.0f };
+    } else if (inputManager.isActive("right")) {
+        dT += { 2.0f, 0.0f };
+    }
+
+    auto col = gd.player.colision();
+    col      = col + dT;
+
+    bool colOk = checkCollision(col, tileMap,
+                                { (float)bm.mode().width(), (float)bm.mode().height() });
+    if (colOk) gd.player.pos += dT;
+}
+
+#endif
 
 void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, float fMaxY,
                    float R, float G, float B) {
@@ -143,8 +198,7 @@ void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, fl
     }
 }
 
-template<int Width, int Height>
-void renderTileMap(TileMap<Width, Height>& tm, window::BitMap& bm) {
+void renderTileMap(TileMap& tm, window::BitMap& bm) {
     for (int Row = 0; Row < 9; ++Row) {
         for (int Column = 0; Column < 17; ++Column) {
             uint32_t TileID = tm.tiles[Row][Column];
@@ -164,16 +218,16 @@ void renderTileMap(TileMap<Width, Height>& tm, window::BitMap& bm) {
 }
 
 void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
-    int MinX = gd.player.X - (gd.player.width / 2);
-    int MinY = gd.player.Y - gd.player.height;
+    int MinX = gd.player.pos.X - (gd.player.width / 2);
+    int MinY = gd.player.pos.Y - gd.player.height;
 
     drawRectangle(bitmap, MinX, MinY, MinX + gd.player.width, MinY + gd.player.height,
                   1.0f, 0.0f, 1.0f);
     // drawRectangle(bitmap, gd.player.X, gd.player.Y, gd.player.X + 2, gd.player.Y + 2,
     //               0.0f, 0.0f, 0.0f);
 
-    drawRectangle(bitmap, gd.player.leftColX(), gd.player.Y - 2, gd.player.rightColX(),
-                  gd.player.Y, 0.0f, 0.0f, 0.0f);
+    drawRectangle(bitmap, gd.player.leftColX(), gd.player.pos.Y - 2,
+                  gd.player.rightColX(), gd.player.pos.Y, 0.0f, 0.0f, 0.0f);
 }
 
 extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
