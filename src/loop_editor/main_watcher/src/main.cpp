@@ -57,17 +57,23 @@ void computeFPS() {
 }
 
 typedef void (*initInputManagerTy)(window::input::InputManager& inputManager);
-typedef void (*processInputsTy)(window::input::InputManager& inputManager, GameData& gd);
-typedef void (*renderBitmapTy)(window::BitMap& bitmap, GameData& gd);
+// typedef void (*processInputsTy)(window::input::InputManager& inputManager, GameData&
+// gd); typedef void (*renderBitmapTy)(window::BitMap& bitmap, GameData& gd);
+typedef void (*gameUpdateAndRenderTy)(window::BitMap& bitmap, game_data::GameData& gd,
+                                      window::input::InputManager& im);
 
 void initInputManagerStub(window::input::InputManager&) {}
 initInputManagerTy initInputManager = initInputManagerStub;
 
-void processInputsStub(window::input::InputManager&, GameData&) {}
-processInputsTy processInputs = processInputsStub;
+// void processInputsStub(window::input::InputManager&, GameData&) {}
+// processInputsTy processInputs = processInputsStub;
 
-void renderBitmapStub(window::BitMap&, GameData&) {}
-renderBitmapTy renderBitmap = renderBitmapStub;
+// void renderBitmapStub(window::BitMap&, GameData&) {}
+// renderBitmapTy renderBitmap = renderBitmapStub;
+
+void gameUpdateAndRenderStub(window::BitMap&, game_data::GameData&,
+                             window::input::InputManager&) {}
+gameUpdateAndRenderTy gameUpdateAndRender = gameUpdateAndRenderStub;
 
 void* libHandle;
 bool loadLibrary(std::string& filename) {
@@ -83,6 +89,18 @@ bool loadLibrary(std::string& filename) {
 
     dlerror();
     {
+        gameUpdateAndRenderTy fcnHandle =
+            (gameUpdateAndRenderTy)dlsym(handle, "gameUpdateAndRender");
+        const char* dlsymError = dlerror();
+        if (dlsymError) {
+            std::cerr << "Cannot load foo: " << dlsymError << std::endl;
+            dlclose(handle);
+            goto error;
+        }
+        gameUpdateAndRender = fcnHandle;
+    }
+
+    {
         initInputManagerTy fcnHandle =
             (initInputManagerTy)dlsym(handle, "initInputManager");
         const char* dlsymError = dlerror();
@@ -93,40 +111,42 @@ bool loadLibrary(std::string& filename) {
         }
         initInputManager = fcnHandle;
     }
-    {
-        processInputsTy fcnHandle = (processInputsTy)dlsym(handle, "processInputs");
-        const char* dlsymError    = dlerror();
-        if (dlsymError) {
-            std::cerr << "Cannot load foo: " << dlsymError << std::endl;
-            dlclose(handle);
-            goto error;
-        }
-        processInputs = fcnHandle;
-    }
-    {
-        renderBitmapTy fcnHandle = (renderBitmapTy)dlsym(handle, "renderBitmap");
-        const char* dlsymError   = dlerror();
-        if (dlsymError) {
-            std::cerr << "Cannot load foo: " << dlsymError << std::endl;
-            dlclose(handle);
-            goto error;
-        }
-        renderBitmap = fcnHandle;
-    }
+    // {
+    //     processInputsTy fcnHandle = (processInputsTy)dlsym(handle, "processInputs");
+    //     const char* dlsymError    = dlerror();
+    //     if (dlsymError) {
+    //         std::cerr << "Cannot load foo: " << dlsymError << std::endl;
+    //         dlclose(handle);
+    //         goto error;
+    //     }
+    //     processInputs = fcnHandle;
+    // }
+    // {
+    //     renderBitmapTy fcnHandle = (renderBitmapTy)dlsym(handle, "renderBitmap");
+    //     const char* dlsymError   = dlerror();
+    //     if (dlsymError) {
+    //         std::cerr << "Cannot load foo: " << dlsymError << std::endl;
+    //         dlclose(handle);
+    //         goto error;
+    //     }
+    //     renderBitmap = fcnHandle;
+    // }
     libHandle = handle;
 
     return true;
 error:
     initInputManager = initInputManagerStub;
-    processInputs    = processInputsStub;
-    renderBitmap     = renderBitmapStub;
+    // processInputs    = processInputsStub;
+    // renderBitmap     = renderBitmapStub;
+    gameUpdateAndRender = gameUpdateAndRenderStub;
     return false;
 }
 
 void unloadLibrary() {
     initInputManager = initInputManagerStub;
-    processInputs    = processInputsStub;
-    renderBitmap     = renderBitmapStub;
+    // processInputs    = processInputsStub;
+    // renderBitmap     = renderBitmapStub;
+    gameUpdateAndRender = gameUpdateAndRenderStub;
     if (libHandle) dlclose(libHandle);
     libHandle = nullptr;
 }
@@ -144,7 +164,7 @@ int main() {
         return 1;
     }
 
-    window::Window win{ { 1280, 720 }, "toto" };
+    window::Window win{ { 960, 540 }, "toto", window::Window::NO_RESIZE };
     auto& inputManager = win.inputManager();
     inputManager.addMapping("record",
                             window::input::Input(window::input::key::KeyboardKey::L));
@@ -158,8 +178,7 @@ int main() {
     GameData gd{
         .backgroundX = 0,
         .backgroundY = 0,
-        .charX       = 100,
-        .charY       = 100,
+        .player      = Player(150, 150),
     };
 
     GameData savedGd;
@@ -216,8 +235,9 @@ int main() {
 
         inputManager.computeInput();
 
-        processInputs(inputManager, gd);
-        renderBitmap(bitmap, gd);
+        // processInputs(inputManager, gd);
+        // renderBitmap(bitmap, gd);
+        gameUpdateAndRender(bitmap, gd, inputManager);
 
         waitToBeOnTime(
             std::chrono::duration<double, std::milli>(targetMiliSecondsPerFrame));
