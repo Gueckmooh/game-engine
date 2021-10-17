@@ -9,7 +9,7 @@ GEN_MSG=$(ECHO) "\tGEN\t$(shell realpath --relative-to="$(PWD)" $@)"
 CC:=$(TARGET_ARCH)gcc
 CXX:=$(TARGET_ARCH)g++
 
-CXXSTD=-std=c++17
+CXXSTD=-std=c++20
 
 DLLEXT ?= so
 

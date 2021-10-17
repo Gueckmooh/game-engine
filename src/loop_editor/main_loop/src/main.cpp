@@ -95,6 +95,18 @@ TileMap tileMap({
     { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
 });
 
+TileMap tileMap2({
+    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+});
+
 bool isOk(Vector<float> vec, window::BitMap& bm) {
     return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
 }
@@ -146,12 +158,16 @@ extern "C" void processInputs(window::input::InputManager& inputManager,
         dT += { 2.0f, 0.0f };
     }
 
-    auto col = gd.player.colision();
-    col      = col + dT;
+    auto col  = gd.player.colision();
+    auto colX = col + dT.Xproj();
+    auto colY = col + dT.Yproj();
 
-    bool colOk = checkCollision(col, tileMap,
-                                { (float)bm.mode().width(), (float)bm.mode().height() });
-    if (colOk) gd.player.pos += dT;
+    bool colXOk = checkCollision(colX, tileMap,
+                                 { (float)bm.mode().width(), (float)bm.mode().height() });
+    bool colYOk = checkCollision(colY, tileMap,
+                                 { (float)bm.mode().width(), (float)bm.mode().height() });
+    if (colXOk) gd.player.pos += dT.Xproj();
+    if (colYOk) gd.player.pos += dT.Yproj();
 }
 
 void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, float fMaxY,
@@ -226,13 +242,6 @@ extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData&
     renderPlayer(bitmap, gd);
 
     drawRectangle(bitmap, testCol, 1.0f, 0.0f, 0.0f);
-    drawRectangle(bitmap,
-                  { testCol.topLeft(), testCol.topLeft() + Vector<float>{ 2.0f, 2.0f } },
-                  0.0f, 0.0f, 0.0f);
-    drawRectangle(
-        bitmap,
-        { testCol.bottomRight() - Vector<float>(2.0f, 2.0f), testCol.bottomRight() },
-        0.0f, 0.0f, 0.0f);
 
     bitmap.flush();
 }

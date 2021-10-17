@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <ostream>
@@ -15,10 +16,20 @@ struct Vector {
     Vector(Vector&) = default;
     Vector()        = default;
 
+    Vector(std::initializer_list<T> ilist) {
+        assert(ilist.size() == 2 && "A 2D vector should have 2 composant");
+        for (int i = 0; auto v : ilist) {
+            if (i == 0) X = v;
+            if (i == 1) Y = v;
+            i++;
+        }
+    }
+
     Vector Xproj() { return Vector(X, 0); }
     Vector Yproj() { return Vector(0, Y); }
 
     Vector operator-() const { return Vector(-X, -Y); }
+
     Vector operator+(const Vector& other) { return Vector(X + other.X, Y + other.Y); }
     Vector operator-(const Vector& other) { return (*this) + (-other); }
     Vector operator+=(const Vector& other) {
