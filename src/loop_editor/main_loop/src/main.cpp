@@ -1,6 +1,5 @@
-#include <cmath>
-// #include <ctime>
 #include <chrono>
+#include <cmath>
 #include <file_watcher/file_watcher.hpp>
 #include <initializer_list>
 #include <iostream>
@@ -100,34 +99,6 @@ bool isOk(Vector<float> vec, window::BitMap& bm) {
     return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
 }
 
-#if 0
-extern "C" void processInputs(window::input::InputManager& inputManager,
-                              game_data::GameData& gd, window::BitMap& bm) {
-
-    int targetX = gd.player.X, targetY = gd.player.Y;
-
-    if (inputManager.isActive("up")
-        && (isOk(gd.player.leftColX(), gd.player.Y - 10, bm)
-            && isOk(gd.player.rightColX(), gd.player.Y - 10, bm))) {
-        targetY -= 2;
-    } else if (inputManager.isActive("down")
-               && (isOk(gd.player.leftColX(), gd.player.Y + 2, bm)
-                   && isOk(gd.player.rightColX(), gd.player.Y + 2, bm))) {
-        targetY += 2;
-    }
-
-    if (inputManager.isActive("left")
-        && (isOk(gd.player.leftColX() - 2, gd.player.Y, bm))) {
-        targetX -= 2;
-    } else if (inputManager.isActive("right")
-               && (isOk(gd.player.rightColX() + 2, gd.player.Y, bm))) {
-        targetX += 2;
-    }
-
-    gd.player.X = targetX;
-    gd.player.Y = targetY;
-}
-#else
 bool checkCollision(Vector<float> vec, TileMap tMap, Vector<float> mapSize) {
     float tileX = vec.X / mapSize.X;
     float tileY = vec.Y / mapSize.Y;
@@ -145,6 +116,19 @@ bool checkCollision(Player::ColisionArea col, TileMap tMap, Vector<float> mapSiz
            && checkCollision(col.topLeft(), tMap, tot)
            && checkCollision(col.topRight(), tMap, tot);
 }
+
+bool checkCollision(Rectangle<float> rect, Vector<float> vec) {
+    return (vec > rect.TopLeft) && (vec < rect.BottomRight);
+}
+
+bool checkCollision(Rectangle<float> rect1, Rectangle<float> rect2) {
+    return checkCollision(rect1, rect2.topLeft())
+           || checkCollision(rect1, rect2.bottomRight())
+           || checkCollision(rect1, rect2.bottomLeft())
+           || checkCollision(rect1, rect2.topRight());
+}
+
+Rectangle<float> testCol{ { 150.0f, 150.0f }, { 200.0f, 200.0f } };
 
 extern "C" void processInputs(window::input::InputManager& inputManager,
                               game_data::GameData& gd, window::BitMap& bm) {
@@ -169,8 +153,6 @@ extern "C" void processInputs(window::input::InputManager& inputManager,
                                 { (float)bm.mode().width(), (float)bm.mode().height() });
     if (colOk) gd.player.pos += dT;
 }
-
-#endif
 
 void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, float fMaxY,
                    float R, float G, float B) {
@@ -198,6 +180,11 @@ void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, fl
     }
 }
 
+void drawRectangle(window::BitMap& bm, Rectangle<float> rect, float R, float G, float B) {
+    drawRectangle(bm, rect.topLeft().X, rect.topLeft().Y, rect.bottomRight().X,
+                  rect.bottomRight().Y, R, G, B);
+}
+
 void renderTileMap(TileMap& tm, window::BitMap& bm) {
     for (int Row = 0; Row < 9; ++Row) {
         for (int Column = 0; Column < 17; ++Column) {
@@ -223,11 +210,8 @@ void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
 
     drawRectangle(bitmap, MinX, MinY, MinX + gd.player.width, MinY + gd.player.height,
                   1.0f, 0.0f, 1.0f);
-    // drawRectangle(bitmap, gd.player.X, gd.player.Y, gd.player.X + 2, gd.player.Y + 2,
-    //               0.0f, 0.0f, 0.0f);
 
-    drawRectangle(bitmap, gd.player.leftColX(), gd.player.pos.Y - 2,
-                  gd.player.rightColX(), gd.player.pos.Y, 0.0f, 0.0f, 0.0f);
+    drawRectangle(bitmap, gd.player.colision(), 0.0f, 0.0f, 0.0f);
 }
 
 extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
@@ -237,12 +221,18 @@ extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData&
     drawRectangle(bitmap, 0.0f, 0.0f, (float)bitmap.mode().width(),
                   (float)bitmap.mode().height(), 1.0f, 0.0f, 0.1f);
 
-    // drawRectangle(bitmap, 0.0f, 0.0f, 50.0f, 50.0f, 0.0f, 0.0f, 0.0f);
-
     renderTileMap(tileMap, bitmap);
 
     renderPlayer(bitmap, gd);
-    // renderBitmap(bitmap, gd);
+
+    drawRectangle(bitmap, testCol, 1.0f, 0.0f, 0.0f);
+    drawRectangle(bitmap,
+                  { testCol.topLeft(), testCol.topLeft() + Vector<float>{ 2.0f, 2.0f } },
+                  0.0f, 0.0f, 0.0f);
+    drawRectangle(
+        bitmap,
+        { testCol.bottomRight() - Vector<float>(2.0f, 2.0f), testCol.bottomRight() },
+        0.0f, 0.0f, 0.0f);
 
     bitmap.flush();
 }

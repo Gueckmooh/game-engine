@@ -15,6 +15,9 @@ struct Vector {
     Vector(Vector&) = default;
     Vector()        = default;
 
+    Vector Xproj() { return Vector(X, 0); }
+    Vector Yproj() { return Vector(0, Y); }
+
     Vector operator-() const { return Vector(-X, -Y); }
     Vector operator+(const Vector& other) { return Vector(X + other.X, Y + other.Y); }
     Vector operator-(const Vector& other) { return (*this) + (-other); }
@@ -34,10 +37,17 @@ struct Vector {
     }
     Vector operator-=(const Vector&& other) { return (*this) += (-other); }
 
-    friend std::ostream& operator<<(std::ostream& os, Vector& v) {
+    bool operator>(const Vector& other) { return X > other.X && Y > other.Y; }
+    bool operator<(const Vector& other) { return X < other.X && Y < other.Y; }
+    bool operator>=(const Vector& other) { return X >= other.X && Y >= other.Y; }
+    bool operator<=(const Vector& other) { return X <= other.X && Y <= other.Y; }
+
+    friend std::ostream& operator<<(std::ostream& os, Vector<T>& v) {
         os << "[" << v.X << ", " << v.Y << "]";
         return os;
     }
+
+    void print(std::ostream& os) { os << "[" << X << ", " << Y << "]"; }
 };
 
 template<typename T>
@@ -77,7 +87,7 @@ struct Player {
     float rightColX() { return pos.X + (((float)width) / 2); }
 
     ColisionArea colision() {
-        return ColisionArea({ pos.X - (((float)width) / 2), pos.Y },
+        return ColisionArea({ pos.X - (((float)width) / 2), pos.Y - 10 },
                             { pos.X + (((float)width) / 2), pos.Y });
     }
 };
