@@ -13,8 +13,11 @@ struct Vector {
     T Y;
 
     Vector(T x, T y) : X(x), Y(y) {}
-    Vector(Vector&) = default;
-    Vector()        = default;
+    Vector(Vector&)  = default;
+    Vector(Vector&&) = default;
+    Vector()         = default;
+
+    constexpr Vector& operator=(const Vector&) = default;
 
     Vector(std::initializer_list<T> ilist) {
         assert(ilist.size() == 2 && "A 2D vector should have 2 composant");
@@ -104,11 +107,8 @@ struct Player {
 };
 
 struct GameData {
-    int backgroundX;
-    int backgroundY;
     Player player;
-    float jump   = 0.0f;
-    size_t mapId = 0;
+    Vector<int> mapPos{ 0, 0 };
 };
 
 }   // namespace game_data

@@ -176,9 +176,7 @@ int main() {
     double targetMiliSecondsPerFrame = 1000.0f / (double)gameUpdateHz;
 
     GameData gd{
-        .backgroundX = 0,
-        .backgroundY = 0,
-        .player      = Player(150, 150),
+        .player = Player(150, 150),
     };
 
     GameData savedGd;
