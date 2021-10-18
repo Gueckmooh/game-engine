@@ -102,7 +102,7 @@ TileMap tileMap1({
     { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
     { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
     { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
@@ -114,14 +114,39 @@ TileMap tileMap2({
     { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
     { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0 },
     { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
     { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
     { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 });
 
-std::vector<TileMap*> tiles{ &tileMap1, &tileMap2 };
+TileMap tileMap3({
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+});
+
+TileMap tileMap4({
+    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+    { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
+    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+});
+
+std::vector<std::vector<TileMap*>> tiles{ { &tileMap1, &tileMap3 },
+                                          { &tileMap2, &tileMap4 } };
 
 // bool isOk(Vector<float> vec, window::BitMap& bm, TileMap& tileMap) {
 //     return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
@@ -148,19 +173,21 @@ bool checkCollision(Player::ColisionArea col, TileMap tMap, Vector<float> mapSiz
            && checkCollision(col.topRight(), tMap, tot);
 }
 
-bool checkCollision(NormalizedRectangle<float> col, std::vector<TileMap*> maps,
-                    Vector<float> mapSize) {
-    float tileW = mapSize.X / ((float)maps[0]->width);
-    float tileH = mapSize.Y / ((float)maps[0]->height);
+bool checkCollision(NormalizedRectangle<float> col,
+                    std::vector<std::vector<TileMap*>> maps, Vector<float> mapSize) {
+    float tileW = mapSize.X / ((float)maps[0][0]->width);
+    float tileH = mapSize.Y / ((float)maps[0][0]->height);
 
-    auto& mapTop    = *maps[col.tl.Y];
-    auto& mapBottom = *maps[col.br.Y];
+    auto& mapTopLeft     = *maps[col.tl.Y][col.tl.X];
+    auto& mapBottomRight = *maps[col.br.Y][col.br.X];
+    auto& mapTopRight    = *maps[col.tl.Y][col.br.X];
+    auto& mapBottomLeft  = *maps[col.br.Y][col.tl.X];
 
     auto tot = Vector<float>(tileW, tileH);
-    return checkCollision(col.rect.bottomLeft(), mapBottom, tot)
-           && checkCollision(col.rect.bottomRight(), mapBottom, tot)
-           && checkCollision(col.rect.topLeft(), mapTop, tot)
-           && checkCollision(col.rect.topRight(), mapTop, tot);
+    return checkCollision(col.rect.bottomLeft(), mapBottomLeft, tot)
+           && checkCollision(col.rect.bottomRight(), mapBottomRight, tot)
+           && checkCollision(col.rect.topLeft(), mapTopLeft, tot)
+           && checkCollision(col.rect.topRight(), mapTopRight, tot);
 }
 
 bool checkCollision(Rectangle<float> rect, Vector<float> vec) {
@@ -310,7 +337,7 @@ void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
 
 extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
                                     window::input::InputManager& im) {
-    auto& tileMap = *tiles[gd.mapPos.Y];
+    auto& tileMap = *tiles[gd.mapPos.Y][gd.mapPos.X];
     processInputs(im, gd, bitmap);
 
     drawRectangle(bitmap, 0.0f, 0.0f, (float)bitmap.mode().width(),
