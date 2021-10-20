@@ -14,6 +14,7 @@ class BitMapBackend::Impl {
 
     uint32_t* fpData;
     // @XXX: this is a workaround to not have screen to do crazy stuff
+    // @note it looks like it is the good solution
     uint32_t* fpUserData;
 
   public:
