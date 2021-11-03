@@ -23,19 +23,21 @@ using namespace std::chrono_literals;
 
 using namespace game_data;
 
+using namespace glm_compat;
+
 namespace {
 
 template<typename T>
 struct NormalizedVector {
-    Vector<T> vect;
-    Vector<int> pos;
+    glm::tvec2<T> vect;
+    glm::tvec2<int> pos;
 };
 
 template<typename T>
 struct NormalizedRectangle {
     Rectangle<T> rect;
-    Vector<int> tl;
-    Vector<int> br;
+    glm::tvec2<int> tl;
+    glm::tvec2<int> br;
 };
 
 class TileMap {
@@ -70,12 +72,12 @@ class TileMap {
         return tiles[(size_t)tileY][(size_t)tileX];
     }
 
-    uint32_t getTile(Vector<float> pos, Vector<float> displaySize) {
-        float tileW = displaySize.X / ((float)width);
-        float tileH = displaySize.Y / ((float)height);
+    uint32_t getTile(glm::tvec2<float> pos, glm::tvec2<float> displaySize) {
+        float tileW = displaySize.x / ((float)width);
+        float tileH = displaySize.y / ((float)height);
 
-        float tileX = pos.X / tileW;
-        float tileY = pos.Y / tileH;
+        float tileX = pos.x / tileW;
+        float tileY = pos.y / tileH;
 
         return tiles[(size_t)tileY][(size_t)tileX];
     }
@@ -152,9 +154,9 @@ std::vector<std::vector<TileMap*>> tiles{ { &tileMap1, &tileMap3 },
 //     return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
 // }
 
-bool checkCollision(Vector<float> vec, TileMap tMap, Vector<float> mapSize) {
-    float tileX = vec.X / mapSize.X;
-    float tileY = vec.Y / mapSize.Y;
+bool checkCollision(glm::tvec2<float> vec, TileMap tMap, glm::tvec2<float> mapSize) {
+    float tileX = vec.x / mapSize.x;
+    float tileY = vec.y / mapSize.y;
 
     if (tileX >= 0 && tileX < tMap.width && tileY < tMap.height && tileY >= 0)
         return tMap.tiles[tileY][tileX] == 0;
@@ -162,11 +164,11 @@ bool checkCollision(Vector<float> vec, TileMap tMap, Vector<float> mapSize) {
         return true;   // @note return true to permit tilemap change
 }
 
-bool checkCollision(Player::ColisionArea col, TileMap tMap, Vector<float> mapSize) {
-    float tileW = mapSize.X / ((float)tMap.width);
-    float tileH = mapSize.Y / ((float)tMap.height);
+bool checkCollision(Player::ColisionArea col, TileMap tMap, glm::tvec2<float> mapSize) {
+    float tileW = mapSize.x / ((float)tMap.width);
+    float tileH = mapSize.y / ((float)tMap.height);
 
-    auto tot = Vector<float>(tileW, tileH);
+    auto tot = glm::tvec2<float>(tileW, tileH);
     return checkCollision(col.bottomLeft(), tMap, tot)
            && checkCollision(col.bottomRight(), tMap, tot)
            && checkCollision(col.topLeft(), tMap, tot)
@@ -174,23 +176,23 @@ bool checkCollision(Player::ColisionArea col, TileMap tMap, Vector<float> mapSiz
 }
 
 bool checkCollision(NormalizedRectangle<float> col,
-                    std::vector<std::vector<TileMap*>> maps, Vector<float> mapSize) {
-    float tileW = mapSize.X / ((float)maps[0][0]->width);
-    float tileH = mapSize.Y / ((float)maps[0][0]->height);
+                    std::vector<std::vector<TileMap*>> maps, glm::tvec2<float> mapSize) {
+    float tileW = mapSize.x / ((float)maps[0][0]->width);
+    float tileH = mapSize.y / ((float)maps[0][0]->height);
 
-    auto& mapTopLeft     = *maps[col.tl.Y][col.tl.X];
-    auto& mapBottomRight = *maps[col.br.Y][col.br.X];
-    auto& mapTopRight    = *maps[col.tl.Y][col.br.X];
-    auto& mapBottomLeft  = *maps[col.br.Y][col.tl.X];
+    auto& mapTopLeft     = *maps[col.tl.y][col.tl.x];
+    auto& mapBottomRight = *maps[col.br.y][col.br.x];
+    auto& mapTopRight    = *maps[col.tl.y][col.br.x];
+    auto& mapBottomLeft  = *maps[col.br.y][col.tl.x];
 
-    auto tot = Vector<float>(tileW, tileH);
+    auto tot = glm::tvec2<float>(tileW, tileH);
     return checkCollision(col.rect.bottomLeft(), mapBottomLeft, tot)
            && checkCollision(col.rect.bottomRight(), mapBottomRight, tot)
            && checkCollision(col.rect.topLeft(), mapTopLeft, tot)
            && checkCollision(col.rect.topRight(), mapTopRight, tot);
 }
 
-bool checkCollision(Rectangle<float> rect, Vector<float> vec) {
+bool checkCollision(Rectangle<float> rect, glm::tvec2<float> vec) {
     return (vec > rect.TopLeft) && (vec < rect.BottomRight);
 }
 
@@ -203,31 +205,31 @@ bool checkCollision(Rectangle<float> rect1, Rectangle<float> rect2) {
 
 Rectangle<float> testCol{ { 150.0f, 150.0f }, { 200.0f, 200.0f } };
 
-NormalizedVector<float> normalizePos(Vector<float> pos, Vector<float> size) {
-    int Xindex = (int)pos.X / size.X;
-    int Yindex = (int)pos.Y / size.Y;
+NormalizedVector<float> normalizePos(glm::tvec2<float> pos, glm::tvec2<float> size) {
+    int Xindex = (int)pos.x / size.x;
+    int Yindex = (int)pos.y / size.y;
 
-    Vector<int> posVec = { Xindex, Yindex };
-    auto normalizedPos = pos - Vector<float>{ size.X * Xindex, size.Y * Yindex };
+    glm::tvec2<int> posVec = { Xindex, Yindex };
+    auto normalizedPos     = pos - glm::tvec2<float>{ size.x * Xindex, size.y * Yindex };
     return { normalizedPos, posVec };
 }
 
-NormalizedRectangle<float> normalizePos(Rectangle<float> pos, Vector<float> size) {
+NormalizedRectangle<float> normalizePos(Rectangle<float> pos, glm::tvec2<float> size) {
     auto tl = normalizePos(pos.TopLeft, size);
     auto br = normalizePos(pos.BottomRight, size);
     return { { tl.vect, br.vect }, tl.pos, br.pos };
 }
 
-Vector<float> unNormalizePos(Vector<int>& posVec, Vector<float>& pos,
-                             Vector<float>& size) {
-    float X = posVec.X * size.X + pos.X;
-    float Y = posVec.Y * size.Y + pos.Y;
+glm::tvec2<float> unNormalizePos(glm::tvec2<int>& posVec, glm::tvec2<float>& pos,
+                                 glm::tvec2<float>& size) {
+    float X = posVec.x * size.x + pos.x;
+    float Y = posVec.y * size.y + pos.y;
 
     return { X, Y };
 }
 
-Vector<float> bitmapSizeVec(window::BitMap& bm) {
-    return Vector<float>{
+glm::tvec2<float> bitmapSizeVec(window::BitMap& bm) {
+    return glm::tvec2<float>{
         (float)bm.mode().width(),
         (float)bm.mode().height(),
     };
@@ -235,25 +237,25 @@ Vector<float> bitmapSizeVec(window::BitMap& bm) {
 
 extern "C" void processInputs(window::input::InputManager& inputManager,
                               game_data::GameData& gd, window::BitMap& bm) {
-    Vector<float> dT{ 0.0f, 0.0f };
+    glm::tvec2<float> dT{ 0.0f, 0.0f };
 
     if (inputManager.isActive("up")) {
-        dT -= { 0.0f, 2.0f };
+        dT = dT - glm::vec2{ 0.0f, 2.0f };
     } else if (inputManager.isActive("down")) {
-        dT += { 0.0f, 2.0f };
+        dT = dT + glm::vec2{ 0.0f, 2.0f };
     }
 
     if (inputManager.isActive("left")) {
-        dT -= { 2.0f, 0.0f };
+        dT = dT - glm::vec2{ 2.0f, 0.0f };
     } else if (inputManager.isActive("right")) {
-        dT += { 2.0f, 0.0f };
+        dT = dT + glm::vec2{ 2.0f, 0.0f };
     }
 
     auto col = gd.player.colision();
     // auto ncol = normalizePos(col, bitmapSizeVec(bm));
 
-    auto colX = col + dT.Xproj();
-    auto colY = col + dT.Yproj();
+    auto colX = col + xproj(dT);
+    auto colY = col + yproj(dT);
 
     auto ncolX = normalizePos(colX, bitmapSizeVec(bm));
     auto ncolY = normalizePos(colY, bitmapSizeVec(bm));
@@ -262,8 +264,8 @@ extern "C" void processInputs(window::input::InputManager& inputManager,
                                  { (float)bm.mode().width(), (float)bm.mode().height() });
     bool colYOk = checkCollision(ncolY, tiles,
                                  { (float)bm.mode().width(), (float)bm.mode().height() });
-    if (colXOk) gd.player.pos += dT.Xproj();
-    if (colYOk) gd.player.pos += dT.Yproj();
+    if (colXOk) gd.player.pos += xproj(dT);
+    if (colYOk) gd.player.pos += yproj(dT);
 
     auto normalized = normalizePos(gd.player.pos, bitmapSizeVec(bm));
     std::cout << normalized.pos << ", " << normalized.vect << std::endl;
@@ -298,8 +300,8 @@ void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, fl
 }
 
 void drawRectangle(window::BitMap& bm, Rectangle<float> rect, float R, float G, float B) {
-    drawRectangle(bm, rect.topLeft().X, rect.topLeft().Y, rect.bottomRight().X,
-                  rect.bottomRight().Y, R, G, B);
+    drawRectangle(bm, rect.topLeft().x, rect.topLeft().y, rect.bottomRight().x,
+                  rect.bottomRight().y, R, G, B);
 }
 
 void renderTileMap(TileMap& tm, window::BitMap& bm) {
@@ -325,8 +327,8 @@ void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
     auto& pos    = gd.player.pos;
     auto npos    = normalizePos(pos, bitmapSizeVec(bitmap));
     auto nposVec = npos.vect;
-    int MinX     = nposVec.X - (gd.player.width / 2);
-    int MinY     = nposVec.Y - gd.player.height;
+    int MinX     = nposVec.x - (gd.player.width / 2);
+    int MinY     = nposVec.y - gd.player.height;
 
     drawRectangle(bitmap, MinX, MinY, MinX + gd.player.width, MinY + gd.player.height,
                   1.0f, 0.0f, 1.0f);
@@ -337,7 +339,7 @@ void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
 
 extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
                                     window::input::InputManager& im) {
-    auto& tileMap = *tiles[gd.mapPos.Y][gd.mapPos.X];
+    auto& tileMap = *tiles[gd.mapPos.y][gd.mapPos.x];
     processInputs(im, gd, bitmap);
 
     drawRectangle(bitmap, 0.0f, 0.0f, (float)bitmap.mode().width(),
