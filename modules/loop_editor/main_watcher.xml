@@ -6,5 +6,6 @@
     <dependancy>audio</dependancy>
     <dependancy>common/logging</dependancy>
     <dependancy>common/file_watcher</dependancy>
+    <dependancy>loop_editor/main_loop</dependancy>
   </dependancies>
 </module>

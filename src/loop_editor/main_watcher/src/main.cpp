@@ -23,6 +23,9 @@ using namespace game_data;
 
 using namespace std::chrono_literals;
 
+using namespace draw::basics;
+using namespace glm_compat;
+
 #if 1
 namespace {
 void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
@@ -61,6 +64,7 @@ typedef void (*initInputManagerTy)(window::input::InputManager& inputManager);
 // gd); typedef void (*renderBitmapTy)(window::BitMap& bitmap, GameData& gd);
 typedef void (*gameUpdateAndRenderTy)(window::BitMap& bitmap, game_data::GameData& gd,
                                       window::input::InputManager& im);
+typedef void (*initializeGameTy)();
 
 void initInputManagerStub(window::input::InputManager&) {}
 initInputManagerTy initInputManager = initInputManagerStub;
@@ -74,6 +78,9 @@ initInputManagerTy initInputManager = initInputManagerStub;
 void gameUpdateAndRenderStub(window::BitMap&, game_data::GameData&,
                              window::input::InputManager&) {}
 gameUpdateAndRenderTy gameUpdateAndRender = gameUpdateAndRenderStub;
+
+void initializeGameStub() {}
+initializeGameTy initializeGame = initializeGameStub;
 
 void* libHandle;
 bool loadLibrary(std::string& filename) {
@@ -111,6 +118,17 @@ bool loadLibrary(std::string& filename) {
         }
         initInputManager = fcnHandle;
     }
+
+    {
+        initializeGameTy fcnHandle = (initializeGameTy)dlsym(handle, "initializeGame");
+        const char* dlsymError     = dlerror();
+        if (dlsymError) {
+            std::cerr << "Cannot load foo: " << dlsymError << std::endl;
+            dlclose(handle);
+            goto error;
+        }
+        initializeGame = fcnHandle;
+    }
     // {
     //     processInputsTy fcnHandle = (processInputsTy)dlsym(handle, "processInputs");
     //     const char* dlsymError    = dlerror();
@@ -147,6 +165,7 @@ void unloadLibrary() {
     // processInputs    = processInputsStub;
     // renderBitmap     = renderBitmapStub;
     gameUpdateAndRender = gameUpdateAndRenderStub;
+    initializeGame      = initializeGameStub;
     if (libHandle) dlclose(libHandle);
     libHandle = nullptr;
 }
@@ -170,13 +189,14 @@ int main() {
                             window::input::Input(window::input::key::KeyboardKey::L));
     inputManager.dontRecord("record");
     initInputManager(inputManager);
+    initializeGame();
 
     int monitorRefreshHz             = 60;
     int gameUpdateHz                 = monitorRefreshHz;
     double targetMiliSecondsPerFrame = 1000.0f / (double)gameUpdateHz;
 
     GameData gd{
-        .player = Player(150, 150),
+        .player = Player(4.5f, 3.0f),
     };
 
     GameData savedGd;

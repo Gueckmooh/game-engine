@@ -38,7 +38,7 @@ main: main-build
 
 .PHONY: main-build
 main-build: main-deps
-	$(QAT)$(MAKE) --no-print-directory -C src/main build
+	$(QAT)$(MAKE) --no-print-directory -C src/loop_editor/main_watcher build
 
 # .PHONY: main-prebuild
 # main-prebuild: main-deps
@@ -46,7 +46,7 @@ main-build: main-deps
 
 .PHONY: main-deps
 main-deps:
-	$(QAT)$(MAKE) --no-print-directory -C src/main dependancies
+	$(QAT)$(MAKE) --no-print-directory -C src/loop_editor/main_watcher dependancies
 
 .PHONY: prebuild
 prebuild: modules_makefiles

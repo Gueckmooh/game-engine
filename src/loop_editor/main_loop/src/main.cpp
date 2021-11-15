@@ -1,9 +1,12 @@
 #include <chrono>
 #include <cmath>
+#include <draw/basics/colors.hpp>
+#include <draw/basics/rectangle.hpp>
 #include <file_watcher/file_watcher.hpp>
 #include <initializer_list>
 #include <iostream>
 #include <main_loop/game_data.hpp>
+#include <main_loop/tilemap.hpp>
 #include <memory>
 #include <thread>
 #include <tuple>
@@ -25,65 +28,172 @@ using namespace game_data;
 
 using namespace glm_compat;
 
-namespace {
+using namespace draw::basics;
 
-template<typename T>
-struct NormalizedVector {
-    glm::tvec2<T> vect;
-    glm::tvec2<int> pos;
-};
+extern "C" void processInputs(window::input::InputManager& inputManager,
+                              game_data::GameData& gd, window::BitMap& /* bm */) {
+    glm::tvec2<float> dT{ 0.0f, 0.0f };
 
-template<typename T>
-struct NormalizedRectangle {
-    Rectangle<T> rect;
-    glm::tvec2<int> tl;
-    glm::tvec2<int> br;
-};
+    if (inputManager.isActive("up")) {
+        dT = dT - glm::vec2{ 0.0f, 0.1f };
+    } else if (inputManager.isActive("down")) {
+        dT = dT + glm::vec2{ 0.0f, 0.1f };
+    }
 
-class TileMap {
-  public:
-    std::vector<std::vector<uint32_t>> tiles;
-    size_t width;
-    size_t height;
-    TileMap(std::initializer_list<std::initializer_list<uint32_t>> init) {
-        size_t height = init.size();
-        size_t width  = 0;
-        for (auto line : init) {
-            tiles.push_back(line);
+    if (inputManager.isActive("left")) {
+        dT = dT - glm::vec2{ 0.1f, 0.0f };
+    } else if (inputManager.isActive("right")) {
+        dT = dT + glm::vec2{ 0.1f, 0.0f };
+    }
 
-            if (width == 0)
-                width = line.size();
-            else {
-                assert((width == line.size())
-                       && "The width of all the lines must be the same");
+    gd.player.pos = gd.player.pos + dT;
+}
+
+// void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, float
+// fMaxY,
+//                    float R, float G, float B) {
+//     int32_t minX = lround(fMinX);
+//     int32_t minY = lround(fMinY);
+//     int32_t maxX = lround(fMaxX);
+//     int32_t maxY = lround(fMaxY);
+
+//     if (minX < 0) { minX = 0; }
+//     if (minY < 0) { minY = 0; }
+//     if (maxX > (int32_t)bm.mode().width()) { maxX = bm.mode().width(); }
+//     if (maxY > (int32_t)bm.mode().height()) { maxY = bm.mode().height(); }
+
+//     uint32_t color = ((lround(R * 255.0f) << 16) | (lround(G * 255.0f) << 8)
+//                       | (lround(B * 255.0f) << 0));
+
+//     uint8_t* Row = ((uint8_t*)bm.data() + minX * bm.mode().bytesPerPixel()
+//                     + minY * bm.mode().pitch());
+
+//     for (ssize_t Y = minY; Y < maxY; ++Y) {
+//         uint32_t* Pixel = (uint32_t*)Row;
+//         for (ssize_t X = minX; X < maxX; ++X) { *Pixel++ = color; }
+
+//         Row += bm.mode().pitch();
+//     }
+// }
+
+// void drawRectangle(window::BitMap& bm, Rectangle<float> rect, float R, float G, float
+// B) {
+//     drawRectangle(bm, rect.topLeft().x, rect.topLeft().y, rect.bottomRight().x,
+//                   rect.bottomRight().y, R, G, B);
+// }
+
+// void renderTileMap(TileMap& tm, window::BitMap& bm) {
+//     for (int Row = 0; Row < 9; ++Row) {
+//         for (int Column = 0; Column < 17; ++Column) {
+//             uint32_t TileID = tm.tiles[Row][Column];
+//             float Gray      = 0.5f;
+//             if (TileID == 1) { Gray = 1.0f; }
+
+//             float MinX =
+//                 0.0f + ((float)Column) * (((float)bm.mode().width()) /
+//                 ((float)tm.width));
+//             float MinY =
+//                 0.0f + ((float)Row) * (((float)bm.mode().height()) /
+//                 ((float)tm.height));
+//             float MaxX = MinX + (((float)bm.mode().width()) / ((float)tm.width));
+//             float MaxY = MinY + (((float)bm.mode().height()) / ((float)tm.height));
+
+//             drawRectangle(bm, MinX, MinY, MaxX, MaxY, Gray, Gray, Gray);
+//         }
+//     }
+// }
+
+struct Display {
+    window::BitMap& bitmap;
+    float widthUnit;
+
+    glm::vec2 cameraOrigin{ 0.0f, 0.0f };
+
+    Display(window::BitMap& bitmap, float widthUnit)
+        : bitmap(bitmap), widthUnit(widthUnit) {}
+
+    void drawRectangle(float fMinX, float fMinY, float fMaxX, float fMaxY,
+                       const Color& _color) {
+        ::draw::basics::drawRectangle(bitmap, fMinX, fMinY, fMaxX, fMaxY, _color);
+    }
+
+    void drawRectangle(Rectangle<float> rect, const Color& _color) {
+        drawRectangle(rect.topLeft().x, rect.topLeft().y, rect.bottomRight().x,
+                      rect.bottomRight().y, _color);
+    }
+
+    float pixelPerUnit() { return ((float)bitmap.mode().width()) / widthUnit; }
+
+    float unitToPixel(float unit) { return unit * pixelPerUnit(); }
+
+    void drawBackground(const Color& _color) {
+        drawRectangle(
+            Rectangle<float>{ { 0.0f, 0.0f },
+                              { bitmap.mode().width(), bitmap.mode().height() } },
+            _color);
+    }
+
+    void drawRectangleInMeters(Rectangle<float> rect, const Color& _color) {
+        Rectangle<float> newRectangle = {
+            { unitToPixel(rect.TopLeft.x), unitToPixel(rect.TopLeft.y) },
+            { unitToPixel(rect.BottomRight.x), unitToPixel(rect.BottomRight.y) },
+        };
+        drawRectangle(newRectangle, _color);
+    }
+
+    glm::vec2 getOriginVector() {
+        return glm::tvec2<float>{ unitToPixel(cameraOrigin.x),
+                                  unitToPixel(cameraOrigin.y) };
+    }
+
+    void renderPlayer(const Player& player) {
+        // @todo move the difference to drawRectangleInMeters
+        drawRectangleInMeters(player.getRect() - cameraOrigin, Color::Blue());
+        drawRectangleInMeters(player.getColision() - cameraOrigin, Color::Black());
+    }
+
+    void renderTileMap(const TileMap& tm) {
+        auto colFloor = Color::White();
+        auto colWall  = Color::Gray();
+        auto tileSize = unitToPixel(tm.tileWidth);
+        auto xshift   = unitToPixel(tm.pos.x);
+        auto yshift   = unitToPixel(tm.pos.y);
+        auto origin   = getOriginVector();
+        for (size_t Row = 0; Row < tm.height; ++Row) {
+            for (size_t Column = 0; Column < tm.width; ++Column) {
+                uint32_t TileID = tm.tiles[Row][Column];
+                Rectangle<float> rect{ xshift + (float)Column * tileSize,
+                                       yshift + (float)Row * tileSize,
+                                       xshift + ((float)Column + 1.0f) * tileSize,
+                                       yshift + ((float)Row + 1.0f) * tileSize };
+                rect = rect - origin;
+                drawRectangle(rect, TileID == 0 ? colFloor : colWall);
             }
         }
-        this->width  = width;
-        this->height = height;
     }
 
-    uint32_t getTile(float X, float Y, float W, float H) {
-        float tileW = W / ((float)width);
-        float tileH = H / ((float)height);
+    void displayGrid() {
+        float pixPerUnit = pixelPerUnit();
 
-        float tileX = X / tileW;
-        float tileY = Y / tileH;
-
-        return tiles[(size_t)tileY][(size_t)tileX];
+        // print lines
+        for (float Row = 0; Row < bitmap.mode().height(); Row += pixPerUnit) {
+            Rectangle<float> rect{ 0.0f, (float)Row, (float)bitmap.mode().width(),
+                                   (float)Row + 1.0f };
+            drawRectangle(rect, Color::Black());
+        }
+        for (float Column = 0; Column < bitmap.mode().width(); Column += pixPerUnit) {
+            Rectangle<float> rect{ (float)Column, 0.0f, (float)Column + 1.0f,
+                                   (float)bitmap.mode().height() };
+            drawRectangle(rect, Color::Black());
+        }
     }
 
-    uint32_t getTile(glm::tvec2<float> pos, glm::tvec2<float> displaySize) {
-        float tileW = displaySize.x / ((float)width);
-        float tileH = displaySize.y / ((float)height);
-
-        float tileX = pos.x / tileW;
-        float tileY = pos.y / tileH;
-
-        return tiles[(size_t)tileY][(size_t)tileX];
+    void renderWorld(WorldMap& world) {
+        auto& set = world.getTilesToRender(Rectangle<float>{
+            cameraOrigin, cameraOrigin + glm::vec2{ widthUnit, (widthUnit / 16) * 9 } });
+        for (auto tm : set) { renderTileMap(*tm); }
     }
 };
-
-}   // namespace
 
 extern "C" void initInputManager(window::input::InputManager& inputManager) {
     inputManager.addMapping("up",
@@ -96,262 +206,110 @@ extern "C" void initInputManager(window::input::InputManager& inputManager) {
                             window::input::Input(window::input::key::KeyboardKey::Right));
     inputManager.addMapping("jump",
                             window::input::Input(window::input::key::KeyboardKey::Space));
+    inputManager.addMapping("shiftLeft",
+                            window::input::Input(window::input::key::KeyboardKey::Q));
+    inputManager.addMapping("shiftRight",
+                            window::input::Input(window::input::key::KeyboardKey::D));
+    inputManager.addMapping("shiftDown",
+                            window::input::Input(window::input::key::KeyboardKey::S));
+    inputManager.addMapping("shiftUp",
+                            window::input::Input(window::input::key::KeyboardKey::Z));
 }
 
-// @todo fix this shit
-TileMap tileMap1({
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-});
+TileMap tileMap1(
+    {
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+        { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+        { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+    },
+    glm::vec2{ 0.0f, .0f });
 
-TileMap tileMap2({
-    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-});
+TileMap tileMap2(
+    {
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+        { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+        { 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+        { 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+        { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    },
+    glm::vec2{ 24.0f, .0f });
 
-TileMap tileMap3({
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-});
+TileMap tileMap3(
+    {
+        { 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
+        { 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
+        { 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
+        { 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+        { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
+    },
+    glm::vec2{ 0.0f, 13.5f });
 
-TileMap tileMap4({
-    { 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1 },
-    { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
-    { 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
-});
+// struct Camera {
+//     glm::vec2 origin;
+//     float width;
+//     Display& display;
 
-std::vector<std::vector<TileMap*>> tiles{ { &tileMap1, &tileMap3 },
-                                          { &tileMap2, &tileMap4 } };
+//     Color bgColor;
 
-// bool isOk(Vector<float> vec, window::BitMap& bm, TileMap& tileMap) {
-//     return (tileMap.getTile(vec.X, vec.Y, bm.mode().width(), bm.mode().height()) == 0);
-// }
+//     Camera(glm::vec2 origin, float width, Display& display)
+//         : origin(origin), width(width), display(display) {}
+//     void setBGColor(Color color) { bgColor = color; }
 
-bool checkCollision(glm::tvec2<float> vec, TileMap tMap, glm::tvec2<float> mapSize) {
-    float tileX = vec.x / mapSize.x;
-    float tileY = vec.y / mapSize.y;
+//     void shot() { d.drawBackground(bgColor); }
+// };
 
-    if (tileX >= 0 && tileX < tMap.width && tileY < tMap.height && tileY >= 0)
-        return tMap.tiles[tileY][tileX] == 0;
-    else
-        return true;   // @note return true to permit tilemap change
-}
+WorldMap World;
 
-bool checkCollision(Player::ColisionArea col, TileMap tMap, glm::tvec2<float> mapSize) {
-    float tileW = mapSize.x / ((float)tMap.width);
-    float tileH = mapSize.y / ((float)tMap.height);
-
-    auto tot = glm::tvec2<float>(tileW, tileH);
-    return checkCollision(col.bottomLeft(), tMap, tot)
-           && checkCollision(col.bottomRight(), tMap, tot)
-           && checkCollision(col.topLeft(), tMap, tot)
-           && checkCollision(col.topRight(), tMap, tot);
-}
-
-bool checkCollision(NormalizedRectangle<float> col,
-                    std::vector<std::vector<TileMap*>> maps, glm::tvec2<float> mapSize) {
-    float tileW = mapSize.x / ((float)maps[0][0]->width);
-    float tileH = mapSize.y / ((float)maps[0][0]->height);
-
-    auto& mapTopLeft     = *maps[col.tl.y][col.tl.x];
-    auto& mapBottomRight = *maps[col.br.y][col.br.x];
-    auto& mapTopRight    = *maps[col.tl.y][col.br.x];
-    auto& mapBottomLeft  = *maps[col.br.y][col.tl.x];
-
-    auto tot = glm::tvec2<float>(tileW, tileH);
-    return checkCollision(col.rect.bottomLeft(), mapBottomLeft, tot)
-           && checkCollision(col.rect.bottomRight(), mapBottomRight, tot)
-           && checkCollision(col.rect.topLeft(), mapTopLeft, tot)
-           && checkCollision(col.rect.topRight(), mapTopRight, tot);
-}
-
-bool checkCollision(Rectangle<float> rect, glm::tvec2<float> vec) {
-    return (vec > rect.TopLeft) && (vec < rect.BottomRight);
-}
-
-bool checkCollision(Rectangle<float> rect1, Rectangle<float> rect2) {
-    return checkCollision(rect1, rect2.topLeft())
-           || checkCollision(rect1, rect2.bottomRight())
-           || checkCollision(rect1, rect2.bottomLeft())
-           || checkCollision(rect1, rect2.topRight());
-}
-
-Rectangle<float> testCol{ { 150.0f, 150.0f }, { 200.0f, 200.0f } };
-
-NormalizedVector<float> normalizePos(glm::tvec2<float> pos, glm::tvec2<float> size) {
-    int Xindex = (int)pos.x / size.x;
-    int Yindex = (int)pos.y / size.y;
-
-    glm::tvec2<int> posVec = { Xindex, Yindex };
-    auto normalizedPos     = pos - glm::tvec2<float>{ size.x * Xindex, size.y * Yindex };
-    return { normalizedPos, posVec };
-}
-
-NormalizedRectangle<float> normalizePos(Rectangle<float> pos, glm::tvec2<float> size) {
-    auto tl = normalizePos(pos.TopLeft, size);
-    auto br = normalizePos(pos.BottomRight, size);
-    return { { tl.vect, br.vect }, tl.pos, br.pos };
-}
-
-glm::tvec2<float> unNormalizePos(glm::tvec2<int>& posVec, glm::tvec2<float>& pos,
-                                 glm::tvec2<float>& size) {
-    float X = posVec.x * size.x + pos.x;
-    float Y = posVec.y * size.y + pos.y;
-
-    return { X, Y };
-}
-
-glm::tvec2<float> bitmapSizeVec(window::BitMap& bm) {
-    return glm::tvec2<float>{
-        (float)bm.mode().width(),
-        (float)bm.mode().height(),
-    };
-}
-
-extern "C" void processInputs(window::input::InputManager& inputManager,
-                              game_data::GameData& gd, window::BitMap& bm) {
-    glm::tvec2<float> dT{ 0.0f, 0.0f };
-
-    if (inputManager.isActive("up")) {
-        dT = dT - glm::vec2{ 0.0f, 2.0f };
-    } else if (inputManager.isActive("down")) {
-        dT = dT + glm::vec2{ 0.0f, 2.0f };
-    }
-
-    if (inputManager.isActive("left")) {
-        dT = dT - glm::vec2{ 2.0f, 0.0f };
-    } else if (inputManager.isActive("right")) {
-        dT = dT + glm::vec2{ 2.0f, 0.0f };
-    }
-
-    auto col = gd.player.colision();
-    // auto ncol = normalizePos(col, bitmapSizeVec(bm));
-
-    auto colX = col + xproj(dT);
-    auto colY = col + yproj(dT);
-
-    auto ncolX = normalizePos(colX, bitmapSizeVec(bm));
-    auto ncolY = normalizePos(colY, bitmapSizeVec(bm));
-
-    bool colXOk = checkCollision(ncolX, tiles,
-                                 { (float)bm.mode().width(), (float)bm.mode().height() });
-    bool colYOk = checkCollision(ncolY, tiles,
-                                 { (float)bm.mode().width(), (float)bm.mode().height() });
-    if (colXOk) gd.player.pos += xproj(dT);
-    if (colYOk) gd.player.pos += yproj(dT);
-
-    auto normalized = normalizePos(gd.player.pos, bitmapSizeVec(bm));
-    std::cout << normalized.pos << ", " << normalized.vect << std::endl;
-
-    gd.mapPos = normalized.pos;
-}
-
-void drawRectangle(window::BitMap& bm, float fMinX, float fMinY, float fMaxX, float fMaxY,
-                   float R, float G, float B) {
-    int32_t minX = lround(fMinX);
-    int32_t minY = lround(fMinY);
-    int32_t maxX = lround(fMaxX);
-    int32_t maxY = lround(fMaxY);
-
-    if (minX < 0) { minX = 0; }
-    if (minY < 0) { minY = 0; }
-    if (maxX > (int32_t)bm.mode().width()) { maxX = bm.mode().width(); }
-    if (maxY > (int32_t)bm.mode().height()) { maxY = bm.mode().height(); }
-
-    uint32_t color = ((lround(R * 255.0f) << 16) | (lround(G * 255.0f) << 8)
-                      | (lround(B * 255.0f) << 0));
-
-    uint8_t* Row = ((uint8_t*)bm.data() + minX * bm.mode().bytesPerPixel()
-                    + minY * bm.mode().pitch());
-
-    for (ssize_t Y = minY; Y < maxY; ++Y) {
-        uint32_t* Pixel = (uint32_t*)Row;
-        for (ssize_t X = minX; X < maxX; ++X) { *Pixel++ = color; }
-
-        Row += bm.mode().pitch();
-    }
-}
-
-void drawRectangle(window::BitMap& bm, Rectangle<float> rect, float R, float G, float B) {
-    drawRectangle(bm, rect.topLeft().x, rect.topLeft().y, rect.bottomRight().x,
-                  rect.bottomRight().y, R, G, B);
-}
-
-void renderTileMap(TileMap& tm, window::BitMap& bm) {
-    for (int Row = 0; Row < 9; ++Row) {
-        for (int Column = 0; Column < 17; ++Column) {
-            uint32_t TileID = tm.tiles[Row][Column];
-            float Gray      = 0.5f;
-            if (TileID == 1) { Gray = 1.0f; }
-
-            float MinX =
-                0.0f + ((float)Column) * (((float)bm.mode().width()) / ((float)tm.width));
-            float MinY =
-                0.0f + ((float)Row) * (((float)bm.mode().height()) / ((float)tm.height));
-            float MaxX = MinX + (((float)bm.mode().width()) / ((float)tm.width));
-            float MaxY = MinY + (((float)bm.mode().height()) / ((float)tm.height));
-
-            drawRectangle(bm, MinX, MinY, MaxX, MaxY, Gray, Gray, Gray);
-        }
-    }
-}
-
-void renderPlayer(window::BitMap& bitmap, game_data::GameData& gd) {
-    auto& pos    = gd.player.pos;
-    auto npos    = normalizePos(pos, bitmapSizeVec(bitmap));
-    auto nposVec = npos.vect;
-    int MinX     = nposVec.x - (gd.player.width / 2);
-    int MinY     = nposVec.y - gd.player.height;
-
-    drawRectangle(bitmap, MinX, MinY, MinX + gd.player.width, MinY + gd.player.height,
-                  1.0f, 0.0f, 1.0f);
-
-    auto normalizedCol = normalizePos(gd.player.colision(), bitmapSizeVec(bitmap));
-    drawRectangle(bitmap, normalizedCol.rect, 0.0f, 0.0f, 0.0f);
+extern "C" void initializeGame() {
+    World.tileMapSize = glm::vec2{ tileMap1.width * tileMap1.tileWidth,
+                                   tileMap1.height * tileMap1.tileWidth };
+    World.mapTable.push_back(std::vector<TileMap*>{ &tileMap1, &tileMap2 });
+    World.mapTable.push_back(std::vector<TileMap*>{ &tileMap3 });
 }
 
 extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
                                     window::input::InputManager& im) {
-    auto& tileMap = *tiles[gd.mapPos.y][gd.mapPos.x];
+    // auto& tileMap = *tiles[gd.mapPos.y][gd.mapPos.x];
     processInputs(im, gd, bitmap);
+    Display d{ bitmap, 24.0 };   // height = 13.5
 
-    drawRectangle(bitmap, 0.0f, 0.0f, (float)bitmap.mode().width(),
-                  (float)bitmap.mode().height(), 1.0f, 0.0f, 0.1f);
+    d.cameraOrigin = gd.player.pos - glm::vec2{ 12.0f, 6.75f };
 
-    renderTileMap(tileMap, bitmap);
+    d.drawBackground(Color::Magenta());
 
-    renderPlayer(bitmap, gd);
+    d.renderWorld(World);
 
-    drawRectangle(bitmap, testCol, 1.0f, 0.0f, 0.0f);
+    // d.renderTileMap(tileMap1);
+    // d.renderTileMap(tileMap2);
 
-    bitmap.flush();
+    d.renderPlayer(gd.player);
+
+    d.displayGrid();
+
+    // drawRectangle(bitmap, 0.0f, 0.0f, (float)bitmap.mode().width(),
+    //               (float)bitmap.mode().height(), 1.0f, 0.0f, 0.1f);
+
+    // renderTileMap(tileMap, bitmap);
+
+    // renderPlayer(bitmap, gd);
+
+    // drawRectangle(bitmap, testCol, 1.0f, 0.0f, 0.0f);
+
+    // bitmap.flush();
 }
 
 void gameUpdateAndRenderR(window::BitMap& bitmap, game_data::GameData& gd,

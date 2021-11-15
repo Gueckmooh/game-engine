@@ -4,5 +4,6 @@
   <dependancies>
     <dependancy>common/macros</dependancy>
     <dependancy>common/logging</dependancy>
+    <dependancy>draw/basics</dependancy>
   </dependancies>
 </module>

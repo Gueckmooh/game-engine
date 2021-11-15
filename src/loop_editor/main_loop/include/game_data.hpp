@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <draw/basics/rectangle.hpp>
 #include <ostream>
 
 #include <glm/gtx/string_cast.hpp>
@@ -95,48 +96,33 @@ struct Vector {
     void print(std::ostream& os) { os << "[" << X << ", " << Y << "]"; }
 };
 
-template<typename T>
-struct Rectangle {
-    // Vector<T> TopLeft;
-    // Vector<T> BottomRight;
-    glm::tvec2<T> TopLeft;
-    glm::tvec2<T> BottomRight;
-
-    Rectangle(glm::tvec2<T> tl, glm::tvec2<T> br) : TopLeft(tl), BottomRight(br) {}
-    Rectangle(Rectangle&) = default;
-
-    glm::tvec2<T> topLeft() { return TopLeft; }
-    glm::tvec2<T> bottomRight() { return BottomRight; }
-    glm::tvec2<T> topRight() { return glm::tvec2<T>(BottomRight.x, TopLeft.y); }
-    glm::tvec2<T> bottomLeft() { return glm::tvec2<T>(TopLeft.x, BottomRight.y); }
-
-    Rectangle operator+(const glm::tvec2<T>& other) {
-        return Rectangle(TopLeft + other, BottomRight + other);
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, Rectangle& rect) {
-        os << "{" << rect.TopLeft << ", " << rect.BottomRight << "}";
-        return os;
-    }
-};
-
 struct Player {
-    using ColisionArea = Rectangle<float>;
+    using ColisionArea = draw::basics::Rectangle<float>;
 
-    glm::tvec2<float> pos;
+    glm::vec2 pos;
 
-    size_t width  = 50;
-    size_t height = 50;
-    Player()      = default;
-    Player(float x, float y) : pos(x, y) {}
+    float width;
+    float height;
+    Player() = default;
+    Player(float x, float y, float width = 1.2f, float height = 1.2f)
+        : pos(x, y), width(width), height(height) {}
     Player(Player&) = default;
 
     float leftColX() { return pos.x - (((float)width) / 2); }
     float rightColX() { return pos.x + (((float)width) / 2); }
 
-    ColisionArea colision() {
-        return ColisionArea({ pos.x - (((float)width) / 2), pos.y - 10 },
-                            { pos.x + (((float)width) / 2), pos.y });
+    ColisionArea getColision() const {
+        glm::vec2 vtl = pos - glm::vec2{ .5f * width, height / 4 };
+        glm::vec2 vbr = pos + glm::vec2{ .5f * width, 0.0f };
+        ColisionArea r{ vtl, vbr };
+        return r;
+    }
+
+    draw::basics::Rectangle<float> getRect() const {
+        glm::vec2 vtl = pos - glm::vec2{ .5f * width, height };
+        glm::vec2 vbr = pos + glm::vec2{ .5f * width, 0.0f };
+        draw::basics::Rectangle<float> r{ vtl, vbr };
+        return r;
     }
 };
 
