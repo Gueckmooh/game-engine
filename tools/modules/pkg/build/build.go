@@ -5,23 +5,13 @@ import (
 	"io/ioutil"
 	"modules/pkg/config"
 	"modules/pkg/modules"
+	"modules/pkg/util"
 	"os"
 	"path"
 	"path/filepath"
 )
 
 const includeDir = "include"
-
-func tryMkdir(path string) error {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		err = os.Mkdir(path, 0755)
-		if err != nil {
-			return fmt.Errorf("tryMkdir: %s", err.Error())
-		}
-	}
-	return nil
-}
 
 func makeHeaderContent(p1 string, p2 string) (string, error) {
 	relpath, err := filepath.Rel(path.Dir(p1), p2)
@@ -53,7 +43,7 @@ func CopyIncludeFiles(conf *config.Config, mod *modules.Module) error {
 			return err
 		}
 		if info.IsDir() && relPath != "." {
-			tryMkdir(path.Join(includePath, relPath))
+			util.TryMkdir(path.Join(includePath, relPath))
 		} else if !info.IsDir() {
 			targetFile := path.Join(includePath, relPath)
 			content, err := makeHeaderContent(targetFile, p)
@@ -78,22 +68,22 @@ func CopyIncludeFiles(conf *config.Config, mod *modules.Module) error {
 
 func PrepareBuildArea(conf *config.Config) error {
 	buildDir := path.Join(conf.SandboxRoot, conf.BuildDir)
-	err := tryMkdir(buildDir)
+	err := util.TryMkdir(buildDir)
 	if err != nil {
 		return fmt.Errorf("PrepareBuildArea: %s", err.Error())
 	}
 
-	err = tryMkdir(path.Join(buildDir, "lib"))
+	err = util.TryMkdir(path.Join(buildDir, "lib"))
 	if err != nil {
 		return fmt.Errorf("PrepareBuildArea: %s", err.Error())
 	}
 
-	err = tryMkdir(path.Join(buildDir, "bin"))
+	err = util.TryMkdir(path.Join(buildDir, "bin"))
 	if err != nil {
 		return fmt.Errorf("PrepareBuildArea: %s", err.Error())
 	}
 
-	err = tryMkdir(path.Join(buildDir, "include"))
+	err = util.TryMkdir(path.Join(buildDir, "include"))
 	if err != nil {
 		return fmt.Errorf("PrepareBuildArea: %s", err.Error())
 	}

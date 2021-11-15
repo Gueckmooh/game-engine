@@ -2,5 +2,7 @@
     "source_root":"src",
     "build_dir":"build",
     "modules_dir":"modules",
-    "makes_dir":"makes"
+    "makes_dir":"makes",
+    "scripts_dir":"scripts",
+    "include_dir":"$(build_dir)/include"
 }

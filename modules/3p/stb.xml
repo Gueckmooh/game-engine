@@ -1,0 +1,12 @@
+<module name="stb" p3="true">
+  <type>only_headers</type>
+  <baseDir>3p/stb</baseDir>
+  <sources>
+    <git>https://github.com/nothings/stb</git>
+    <actions>
+      <action type="ExportHeaders" from="$(src_dir)/*.h" to="$(include_dir)/3p/stb/"></action>
+    </actions>
+  </sources>
+  <dependancies>
+  </dependancies>
+</module>

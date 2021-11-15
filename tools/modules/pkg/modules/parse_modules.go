@@ -5,17 +5,61 @@ import (
 	"fmt"
 	"io/ioutil"
 	"modules/pkg/config"
+	"modules/pkg/util"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
+
+type Action struct {
+	Type string `xml:"type,attr"`
+	From string `xml:"from,attr"`
+	To   string `xml:"to,attr"`
+	Text string `xml:",chardata"`
+}
 
 type Module struct {
 	Name         string `xml:"name,attr"`
+	P3           bool   `xml:"p3,attr"`
 	Type         string `xml:"type"`
 	BaseDir      string `xml:"baseDir"`
 	Dependancies struct {
 		Dependancy []string `xml:"dependancy"`
 	} `xml:"dependancies"`
+	Sources struct {
+		Git     string `xml:"git"`
+		Actions struct {
+			Action []Action `xml:"action"`
+		} `xml:"actions"`
+	} `xml:"sources"`
+}
+
+// func RunCopyFile(from string, to string) {
+// }
+
+func RunAction(action Action) error {
+	switch action.Type {
+	case "ExportHeaders":
+		files, err := filepath.Glob(action.From)
+		if err != nil {
+			return fmt.Errorf("RunAction: %s", err.Error())
+		}
+		for _, v := range files {
+			util.ExportHeader(v, path.Join(action.To, path.Base(v)))
+		}
+	}
+	return nil
+}
+
+func RunActions(actions []Action) error {
+	for _, v := range actions {
+		err := RunAction(v)
+		if err != nil {
+			return fmt.Errorf("RunActions: %s", err.Error())
+		}
+	}
+	return nil
 }
 
 const (
@@ -82,6 +126,23 @@ func GetModuleByFile(filePath string) (*Module, error) {
 	}
 
 	return mod, nil
+}
+
+func expand(s string, mod *Module, conf *config.Config) string {
+	s = strings.ReplaceAll(s, "$(src_dir)", path.Join(conf.SrcRoot, mod.BaseDir))
+	s = strings.ReplaceAll(s, "$(include_dir)", path.Join(conf.IncludeDir))
+	return s
+}
+
+func ExpandModule(mod *Module, conf *config.Config) {
+	var newAction []Action
+	for _, v := range mod.Sources.Actions.Action {
+		From := expand(v.From, mod, conf)
+		To := expand(v.To, mod, conf)
+		Text := expand(v.Text, mod, conf)
+		newAction = append(newAction, Action{Type: v.Type, From: From, To: To, Text: Text})
+	}
+	mod.Sources.Actions.Action = newAction
 }
 
 type DepTree struct {
