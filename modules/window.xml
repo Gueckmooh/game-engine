@@ -1,8 +1,0 @@
-<module name="window">
-  <type>shared_library</type>
-  <baseDir>window</baseDir>
-  <dependancies>
-    <dependancy>common/macros</dependancy>
-    <dependancy>common/logging</dependancy>
-  </dependancies>
-</module>

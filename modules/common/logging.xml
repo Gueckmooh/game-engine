@@ -1,7 +1,0 @@
-<module name="common/logging">
-  <type>shared_library</type>
-  <baseDir>common/logging</baseDir>
-  <dependancies>
-    <dependancy>common/macros</dependancy>
-  </dependancies>
-</module>

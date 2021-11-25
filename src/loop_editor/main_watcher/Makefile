@@ -1,7 +1,9 @@
-MODULE=loop_editor/main_watcher
+MODULE_NAME=loop_editor/main_watcher
 
-SRC_PATH=$(shell pwd)/src
+include config.mk
 
-LDFLAGS+= -ldl
+include $(MAKE_INCLUDE_DIR)/base.mk
 
-include $(MAKE_INCLUDE_DIR)/common.mk
+LDFLAGS+=-ldl
+
+include $(MAKE_INCLUDE_DIR)/build_module.mk

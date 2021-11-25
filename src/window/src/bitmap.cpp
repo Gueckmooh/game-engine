@@ -3,7 +3,7 @@
 
 #include <window/bitmap.hpp>
 
-#ifdef __USE_WINDOWS__
+#ifdef __TARGET_WINDOWS__
 #    include "backends/windows/bitmap_backend.hpp"
 #else
 #    include "backends/linux/bitmap_backend.hpp"

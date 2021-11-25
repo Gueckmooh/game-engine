@@ -1,6 +1,0 @@
-<module name="common/macros">
-  <type>only_headers</type>
-  <baseDir>common/macros</baseDir>
-  <dependancies>
-  </dependancies>
-</module>

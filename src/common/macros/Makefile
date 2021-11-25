@@ -1,5 +1,6 @@
-MODULE:=common/macros
+MODULE_NAME=common/macros
 
-HEADERS_EXPORT_DIR=macros
+include config.mk
 
-include $(MAKE_INCLUDE_DIR)/common.mk
+include $(MAKE_INCLUDE_DIR)/base.mk
+include $(MAKE_INCLUDE_DIR)/build_module.mk

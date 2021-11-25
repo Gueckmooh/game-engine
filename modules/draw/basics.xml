@@ -1,7 +1,0 @@
-<module name="draw/basics">
-  <type>shared_library</type>
-  <baseDir>draw/basics</baseDir>
-  <dependancies>
-    <dependancy>window</dependancy>
-  </dependancies>
-</module>

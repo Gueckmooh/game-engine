@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="old_main">
+  <type>executable</type>
+  <baseDir>old_main</baseDir>
+  <exportDir>old_main</exportDir>
+  <dependencies>
+    <dependency>window</dependency>
+    <dependency>audio</dependency>
+    <dependency>common/logging</dependency>
+    <dependency>common/file_watcher</dependency>
+  </dependencies>
+</module>

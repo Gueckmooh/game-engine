@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="common/logging">
+  <type>shared_library</type>
+  <baseDir>common/logging</baseDir>
+  <exportDir>logging</exportDir>
+  <dependencies>
+    <dependency>common/macros</dependency>
+  </dependencies>
+</module>

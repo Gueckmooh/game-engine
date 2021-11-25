@@ -1,8 +1,0 @@
-<module name="common/file_watcher">
-  <type>shared_library</type>
-  <baseDir>common/file_watcher</baseDir>
-  <dependancies>
-    <dependancy>common/macros</dependancy>
-    <dependancy>common/logging</dependancy>
-  </dependancies>
-</module>

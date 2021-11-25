@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="draw/basics">
+  <type>shared_library</type>
+  <baseDir>draw/basics</baseDir>
+  <exportDir>draw/basics</exportDir>
+  <dependencies>
+    <dependency>window</dependency>
+  </dependencies>
+</module>

@@ -1,11 +1,16 @@
-MODULE=loop_editor/main_loop
+MODULE_NAME=loop_editor/main_loop
 
-SRC_PATH=$(shell pwd)/src
+include config.mk
 
-POST_BUILD=copy-lib
-copy-lib:
-	cp $(TARGET_PATH) $(dir $(TARGET_PATH))new_$(TARGET)
+include $(MAKE_INCLUDE_DIR)/base.mk
 
-HEADERS_EXPORT_DIR=main_loop
+ifeq ($(LIBRARY_KIND),shared)
+POST_BUILD_HOOKS+=copy_lib
+.PHONY: copy_lib
+copy_lib: $(LIB_DIR)/new_$(MODULE_TARGET).so
+$(LIB_DIR)/new_$(MODULE_TARGET).so: $(LIB_DIR)/$(MODULE_TARGET).so
+	@$(ECHO) "\tCOPYING $(LIB_DIR)/new_$(MODULE_TARGET).so"
+	$(QAT)cp $(LIB_DIR)/$(MODULE_TARGET).so $(LIB_DIR)/new_$(MODULE_TARGET).so
+endif
 
-include $(MAKE_INCLUDE_DIR)/common.mk
+include $(MAKE_INCLUDE_DIR)/build_module.mk

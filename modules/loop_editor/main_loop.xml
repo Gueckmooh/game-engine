@@ -1,9 +1,0 @@
-<module name="loop_editor/main_loop">
-  <type>shared_library</type>
-  <baseDir>loop_editor/main_loop</baseDir>
-  <dependancies>
-    <dependancy>common/macros</dependancy>
-    <dependancy>common/logging</dependancy>
-    <dependancy>draw/basics</dependancy>
-  </dependancies>
-</module>

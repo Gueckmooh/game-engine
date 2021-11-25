@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="audio">
+  <type>shared_library</type>
+  <baseDir>audio</baseDir>
+  <exportDir>audio</exportDir>
+  <dependencies>
+    <dependency>common/macros</dependency>
+    <dependency>common/logging</dependency>
+  </dependencies>
+</module>

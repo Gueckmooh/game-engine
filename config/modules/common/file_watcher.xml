@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="common/file_watcher">
+  <type>shared_library</type>
+  <baseDir>common/file_watcher</baseDir>
+  <exportDir>file_watcher</exportDir>
+  <dependencies>
+    <dependency>common/macros</dependency>
+    <dependency>common/logging</dependency>
+  </dependencies>
+</module>

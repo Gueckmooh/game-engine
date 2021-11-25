@@ -1,6 +1,14 @@
 {
-    "source_root":"src",
+    "source_dir":"src",
+    "config_dir":"config",
     "build_dir":"build",
-    "modules_dir":"modules",
-    "makes_dir":"makes"
+    "test_dir":"$(build_dir)/test",
+    "test_results_dir":"test",
+    "modules_dir":"$(config_dir)/modules",
+    "3p_modules_dir":"$(modules_dir)/3p",
+    "makefiles_dir":"$(config_dir)/makefiles",
+    "makerules_dir":"$(config_dir)/makerules",
+    "scripts_dir":"scripts",
+    "include_dir":"$(build_dir)/include",
+    "target_os":"linux"
 }

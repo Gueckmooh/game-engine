@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="loop_editor/main_watcher">
+  <type>executable</type>
+  <baseDir>loop_editor/main_watcher</baseDir>
+  <exportDir>loop_editor/main_watcher</exportDir>
+  <dependencies>
+    <dependency>window</dependency>
+    <dependency>audio</dependency>
+    <dependency>common/logging</dependency>
+    <dependency>common/file_watcher</dependency>
+    <dependency>loop_editor/main_loop</dependency>
+  </dependencies>
+</module>

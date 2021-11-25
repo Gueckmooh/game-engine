@@ -1,4 +1,4 @@
-MODULE_NAME=draw/basics
+MODULE_NAME=old_main
 
 include config.mk
 

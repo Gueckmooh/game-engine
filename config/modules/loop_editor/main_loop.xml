@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="loop_editor/main_loop">
+  <type>shared_library</type>
+  <baseDir>loop_editor/main_loop</baseDir>
+  <exportDir>main_loop</exportDir>
+  <dependencies>
+    <dependency>common/macros</dependency>
+    <dependency>common/logging</dependency>
+    <dependency>draw/basics</dependency>
+  </dependencies>
+</module>

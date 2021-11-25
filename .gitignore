@@ -36,7 +36,7 @@ build/
 .ccls-cache/
 compile_commands.json
 config/makefiles/
-tools/modules/bin
+tools/bin
 
 ### Go ###
 # Binaries for programs and plugins
@@ -54,4 +54,5 @@ tools/modules/bin
 /vendor/
 /Godeps/
 
-# End of https://www.toptal.com/developers/gitignore/api/go,c++
+### Build system files
+config.mk

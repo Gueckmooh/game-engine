@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="window">
+  <type>shared_library</type>
+  <baseDir>window</baseDir>
+  <exportDir>window</exportDir>
+  <dependencies>
+    <dependency>common/macros</dependency>
+    <dependency>common/logging</dependency>
+  </dependencies>
+</module>
