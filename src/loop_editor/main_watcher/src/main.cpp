@@ -10,11 +10,11 @@
 #include <thread>
 
 #include <audio/audio_engine.hpp>
-#include <audio/examples/examples.hpp>
+// #include <audio/examples/examples.hpp>
 #include <audio/sound_data.hpp>
 #include <logging/logger.hpp>
 #include <window/bitmap.hpp>
-#include <window/examples/examples.hpp>
+// #include <window/examples/examples.hpp>
 #include <window/input.hpp>
 #include <window/video_mode.hpp>
 #include <window/window.hpp>
@@ -26,7 +26,6 @@ using namespace std::chrono_literals;
 using namespace draw::basics;
 using namespace glm_compat;
 
-#if 1
 namespace {
 void waitToBeOnTime(std::chrono::duration<double> targetSecondsPerFrame) {
     static auto lastCounter = std::chrono::high_resolution_clock::now();
@@ -59,6 +58,7 @@ void computeFPS() {
     begin = std::chrono::high_resolution_clock::now();
 }
 
+#ifdef __MAIN_LOOP_SHARED_LIBRARY__
 typedef void (*initInputManagerTy)(window::input::InputManager& inputManager);
 // typedef void (*processInputsTy)(window::input::InputManager& inputManager, GameData&
 // gd); typedef void (*renderBitmapTy)(window::BitMap& bitmap, GameData& gd);
@@ -169,19 +169,29 @@ void unloadLibrary() {
     if (libHandle) dlclose(libHandle);
     libHandle = nullptr;
 }
+#else
+extern "C" void initInputManager(window::input::InputManager& inputManager);
+extern "C" void gameUpdateAndRender(window::BitMap& bitmap, game_data::GameData& gd,
+                                    window::input::InputManager& im);
+extern "C" void initializeGame();
+#endif
 
 }   // namespace
 
 int main() {
+#ifdef __MAIN_LOOP_SHARED_LIBRARY__
     file_watcher::FileWatcher watcher;
     std::string libName{ "./build/lib/new_libloop_editor_main_loop.so" };
     watcher.watch(libName);
+#endif
 
     initLogger();
+#ifdef __MAIN_LOOP_SHARED_LIBRARY__
     if (!loadLibrary(libName)) {
         std::cerr << "Could not load library..." << std::endl;
         return 1;
     }
+#endif
 
     window::Window win{ { 960, 540 }, "toto", window::Window::NO_RESIZE };
     auto& inputManager = win.inputManager();
@@ -206,6 +216,7 @@ int main() {
     int recordedFrames = 0;
     int replayedFrames = 0;
     while (true) {
+#ifdef __MAIN_LOOP_SHARED_LIBRARY__
         bool reload = false;
         while (auto event = watcher.pollEvent()) {
             if (event->type == file_watcher::FileWatchEvent::Type::Modified) {
@@ -218,6 +229,7 @@ int main() {
             loadLibrary(libName);
             reload = false;
         }
+#endif
 
         if (recording) {
             // @todo find a way to record and do not lose data...
@@ -265,20 +277,3 @@ int main() {
     }
     return 0;
 }
-#else
-
-int main() {
-    file_watcher::FileWatcher watcher;
-    watcher.watch("/tmp/toto.txt");
-
-    while (true) {
-        std::this_thread::sleep_for(500ms);
-
-        while (auto event = watcher.pollEvent()) {
-            std::cout << "FileWatcher: watched file " << event->path << " " << event->type
-                      << std::endl;
-        }
-    }
-}
-
-#endif

@@ -2,6 +2,7 @@ package config
 
 import (
 	"reflect"
+	"tools/pkg/options"
 	"tools/pkg/utils"
 )
 
@@ -32,6 +33,17 @@ type Config struct {
 	IncludeDir     string `json:"include_dir" type:"path" dump_to_mk:"true"`
 	TargetOS       string `json:"target_os" type:"flag" dump_to_mk:"ifnotempty"`
 	LibraryKind    string `json:"library_kind" type:"flag" dump_to_mk:"false"`
+}
+
+func ExportConfig(c *Config) {
+	vConf := reflect.ValueOf(c)
+	for i := 0; i < vConf.Elem().NumField(); i++ {
+		value := vConf.Elem().Field(i).String()
+		key := vConf.Elem().Type().Field(i).Tag.Get("json")
+		if key != "" {
+			options.SetOption(key, value)
+		}
+	}
 }
 
 func (c *Config) Expand(context *utils.Context) *Config {

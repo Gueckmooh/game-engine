@@ -17,10 +17,10 @@ CXXFLAGS+=$(CXXSTD)
 
 ifeq ($(MODULE_TARGET_KIND),shared_library)
 ifeq ($(LIBRARY_KIND),shared)
-CXXFLAGS+=-D__LIBRARY_KIND__=shared
+CXXFLAGS+=-D__TARGET_SHARED_LIBRARY__
 endif
 ifeq ($(LIBRARY_KIND),static)
-CXXFLAGS+=-D__LIBRARY_KIND__=static
+CXXFLAGS+=-D__TARGET_STATIC_LIBRARY__
 endif
 endif
 

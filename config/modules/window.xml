@@ -7,4 +7,13 @@
     <dependency>common/macros</dependency>
     <dependency>common/logging</dependency>
   </dependencies>
+  <extraDependencies>
+    <dependency target_os="linux">xcb</dependency>
+    <dependency target_os="linux">xcb-xkb</dependency>
+    <dependency target_os="linux">xkbcommon</dependency>
+    <dependency target_os="linux">xkbcommon-x11</dependency>
+    <dependency target_os="linux">xcb-image</dependency>
+    <dependency target_os="linux">xcb-shm</dependency>
+    <dependency target_os="linux">m</dependency> <!--math-->
+  </extraDependencies>
 </module>

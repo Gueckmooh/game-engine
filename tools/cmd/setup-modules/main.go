@@ -37,6 +37,7 @@ func tryMain() error {
 
 	c := utils.MakeContext()
 	newConfig := conf.Expand(c)
+	config.ExportConfig(newConfig)
 
 	modFiles, err := modules.GetModuleFiles(newConfig)
 	if err != nil {
