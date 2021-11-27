@@ -32,7 +32,7 @@
 *.out
 *.app
 
-build/
+./build/
 .ccls-cache/
 compile_commands.json
 config/makefiles/
